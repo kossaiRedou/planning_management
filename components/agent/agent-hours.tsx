@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth-context"
-import { demoShifts, demoSites, getShiftDurationHours } from "@/lib/demo-data"
+import { getShiftDurationHours } from "@/lib/demo-data"
+import type { Site, Shift } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,20 +23,74 @@ import { Clock, Sun, Moon, ChevronLeft, ChevronRight, Download } from "lucide-re
 
 export function AgentHours() {
   const { user } = useAuth()
+  const supabase = createClient()
+  
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [myShifts, setMyShifts] = useState<Shift[]>([])
+  const [sites, setSites] = useState<Site[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const myShifts = useMemo(() => {
-    if (!user) return []
-    const start = startOfMonth(currentMonth)
-    const end = endOfMonth(currentMonth)
-    return demoShifts
-      .filter((s) => {
-        if (s.agentId !== user.id) return false
-        const shiftDate = parseISO(s.date)
-        return isWithinInterval(shiftDate, { start, end })
-      })
-      .sort((a, b) => a.date.localeCompare(b.date))
-  }, [user, currentMonth])
+  // Load shifts from Supabase
+  useEffect(() => {
+    if (!user) return
+
+    async function loadShifts() {
+      setIsLoading(true)
+      try {
+        const start = startOfMonth(currentMonth)
+        const end = endOfMonth(currentMonth)
+
+        // Load shifts
+        const { data: shiftsData } = await supabase
+          .from('shifts')
+          .select('*')
+          .eq('agent_id', user.id)
+          .gte('date', format(start, 'yyyy-MM-dd'))
+          .lte('date', format(end, 'yyyy-MM-dd'))
+          .order('date', { ascending: true })
+
+        if (shiftsData) {
+          setMyShifts(shiftsData.map(shift => ({
+            id: shift.id,
+            organization_id: shift.organization_id,
+            agentId: shift.agent_id,
+            siteId: shift.site_id,
+            date: shift.date,
+            startTime: shift.start_time,
+            endTime: shift.end_time,
+            notes: shift.notes || undefined,
+            isNight: shift.is_night,
+            isSunday: shift.is_sunday,
+            status: shift.status,
+          })))
+        }
+
+        // Load sites
+        const { data: sitesData } = await supabase
+          .from('sites')
+          .select('*')
+          .eq('organization_id', user.organization_id)
+
+        if (sitesData) {
+          setSites(sitesData.map(site => ({
+            id: site.id,
+            organization_id: site.organization_id,
+            name: site.name,
+            address: site.address,
+            contactName: site.contact_name || undefined,
+            contactPhone: site.contact_phone || undefined,
+          })))
+        }
+
+      } catch (error) {
+        console.error('Error loading hours:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadShifts()
+  }, [user, currentMonth, supabase])
 
   const stats = useMemo(() => {
     let totalHours = 0
@@ -61,7 +117,7 @@ export function AgentHours() {
   function exportCSV() {
     const headers = ["Date", "Site", "Debut", "Fin", "Duree (h)", "Type"]
     const rows = myShifts.map((shift) => {
-      const site = demoSites.find((s) => s.id === shift.siteId)
+      const site = sites.find((s) => s.id === shift.siteId)
       const duration = getShiftDurationHours(shift)
       const type = shift.isNight ? "Nuit" : shift.isSunday ? "Dimanche" : "Jour"
       return [
@@ -81,6 +137,14 @@ export function AgentHours() {
     a.download = `heures_${format(currentMonth, "yyyy-MM")}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Chargement des heures...</div>
+      </div>
+    )
   }
 
   return (
@@ -168,7 +232,7 @@ export function AgentHours() {
                 </TableHeader>
                 <TableBody>
                   {myShifts.map((shift) => {
-                    const site = demoSites.find((s) => s.id === shift.siteId)
+                    const site = sites.find((s) => s.id === shift.siteId)
                     const duration = getShiftDurationHours(shift)
                     return (
                       <TableRow key={shift.id}>

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth-context"
-import { demoAvailabilities } from "@/lib/demo-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,8 +23,11 @@ import type { Availability } from "@/lib/types"
 
 export function AgentAvailability() {
   const { user } = useAuth()
+  const supabase = createClient()
+  
   const [currentMonth, setCurrentMonth] = useState(addMonths(new Date(), 1))
-  const [localAvailabilities, setLocalAvailabilities] = useState<Availability[]>(demoAvailabilities)
+  const [localAvailabilities, setLocalAvailabilities] = useState<Availability[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [saved, setSaved] = useState(false)
 
   const monthDays = useMemo(() => {
@@ -32,6 +35,43 @@ export function AgentAvailability() {
     const end = endOfMonth(currentMonth)
     return eachDayOfInterval({ start, end })
   }, [currentMonth])
+
+  // Load availabilities from Supabase
+  useEffect(() => {
+    if (!user) return
+
+    async function loadAvailabilities() {
+      setIsLoading(true)
+      try {
+        const start = startOfMonth(currentMonth)
+        const end = endOfMonth(currentMonth)
+
+        const { data, error } = await supabase
+          .from('availabilities')
+          .select('*')
+          .eq('agent_id', user.id)
+          .gte('date', format(start, 'yyyy-MM-dd'))
+          .lte('date', format(end, 'yyyy-MM-dd'))
+
+        if (!error && data) {
+          setLocalAvailabilities(data.map(avail => ({
+            id: avail.id,
+            organization_id: avail.organization_id,
+            agentId: avail.agent_id,
+            date: avail.date,
+            available: avail.available,
+          })))
+        }
+
+      } catch (error) {
+        console.error('Error loading availabilities:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadAvailabilities()
+  }, [user, currentMonth, supabase])
 
   const myAvailabilities = useMemo(() => {
     if (!user) return []
@@ -46,28 +86,59 @@ export function AgentAvailability() {
     [myAvailabilities]
   )
 
-  function toggleDay(day: Date) {
+  async function toggleDay(day: Date) {
     if (!user) return
     const dateStr = format(day, "yyyy-MM-dd")
     setSaved(false)
 
-    setLocalAvailabilities((prev) => {
-      const existing = prev.find((a) => a.agentId === user.id && a.date === dateStr)
+    const existing = localAvailabilities.find((a) => a.agentId === user.id && a.date === dateStr)
+    
+    try {
       if (existing) {
-        return prev.map((a) =>
-          a.id === existing.id ? { ...a, available: !a.available } : a
+        // Update existing
+        const { error } = await supabase
+          .from('availabilities')
+          .update({ available: !existing.available })
+          .eq('id', existing.id)
+
+        if (error) throw error
+
+        setLocalAvailabilities((prev) =>
+          prev.map((a) =>
+            a.id === existing.id ? { ...a, available: !a.available } : a
+          )
         )
+      } else {
+        // Insert new
+        const { data, error } = await supabase
+          .from('availabilities')
+          .insert({
+            organization_id: user.organization_id,
+            agent_id: user.id,
+            date: dateStr,
+            available: false,
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        if (data) {
+          setLocalAvailabilities((prev) => [
+            ...prev,
+            {
+              id: data.id,
+              organization_id: data.organization_id,
+              agentId: data.agent_id,
+              date: data.date,
+              available: data.available,
+            },
+          ])
+        }
       }
-      return [
-        ...prev,
-        {
-          id: `avail-${dateStr}-${user.id}`,
-          agentId: user.id,
-          date: dateStr,
-          available: false,
-        },
-      ]
-    })
+    } catch (error) {
+      console.error('Error toggling availability:', error)
+    }
   }
 
   function handleSave() {
@@ -84,6 +155,14 @@ export function AgentAvailability() {
 
   const deadline = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 20)
   const isPastDeadline = isBefore(deadline, new Date())
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Chargement des disponibilités...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">

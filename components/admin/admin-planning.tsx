@@ -1,14 +1,10 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
-import {
-  demoUsers,
-  demoSites,
-  demoShifts,
-  demoAvailabilities,
-  getShiftDurationHours,
-} from "@/lib/demo-data"
-import type { Shift } from "@/lib/types"
+import { useState, useMemo, useCallback, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/lib/auth-context"
+import { getShiftDurationHours } from "@/lib/demo-data"
+import type { Shift, Site, User } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -50,8 +46,15 @@ import {
 } from "lucide-react"
 
 export function AdminPlanning() {
+  const { user, organization } = useAuth()
+  const supabase = createClient()
+  
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [shifts, setShifts] = useState<Shift[]>(demoShifts)
+  const [shifts, setShifts] = useState<Shift[]>([])
+  const [agents, setAgents] = useState<User[]>([])
+  const [sites, setSites] = useState<Site[]>([])
+  const [availabilities, setAvailabilities] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [selectedCell, setSelectedCell] = useState<{ agentId: string; date: string } | null>(null)
   const [published, setPublished] = useState(false)
@@ -62,11 +65,102 @@ export function AdminPlanning() {
   const [newShiftEnd, setNewShiftEnd] = useState("20:00")
   const [newShiftNotes, setNewShiftNotes] = useState("")
 
-  const agents = demoUsers.filter((u) => u.role === "agent")
-
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
+
+  // Load data from Supabase
+  useEffect(() => {
+    if (!organization) return
+
+    async function loadData() {
+      setIsLoading(true)
+      try {
+        // Load agents
+        const { data: agentsData } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('organization_id', organization.id)
+          .eq('role', 'agent')
+
+        if (agentsData) {
+          setAgents(agentsData.map(profile => ({
+            id: profile.id,
+            organization_id: profile.organization_id,
+            email: '', // Email not in profile table
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            role: 'agent' as const,
+            phone: profile.phone || undefined,
+            certifications: profile.certifications || undefined,
+          })))
+        }
+
+        // Load sites
+        const { data: sitesData } = await supabase
+          .from('sites')
+          .select('*')
+          .eq('organization_id', organization.id)
+
+        if (sitesData) {
+          setSites(sitesData.map(site => ({
+            id: site.id,
+            organization_id: site.organization_id,
+            name: site.name,
+            address: site.address,
+            contactName: site.contact_name || undefined,
+            contactPhone: site.contact_phone || undefined,
+          })))
+        }
+
+        // Load shifts for the week
+        const weekStartStr = format(weekStart, 'yyyy-MM-dd')
+        const weekEndStr = format(weekEnd, 'yyyy-MM-dd')
+
+        const { data: shiftsData } = await supabase
+          .from('shifts')
+          .select('*')
+          .eq('organization_id', organization.id)
+          .gte('date', weekStartStr)
+          .lte('date', weekEndStr)
+
+        if (shiftsData) {
+          setShifts(shiftsData.map(shift => ({
+            id: shift.id,
+            organization_id: shift.organization_id,
+            agentId: shift.agent_id,
+            siteId: shift.site_id,
+            date: shift.date,
+            startTime: shift.start_time,
+            endTime: shift.end_time,
+            notes: shift.notes || undefined,
+            isNight: shift.is_night,
+            isSunday: shift.is_sunday,
+            status: shift.status,
+          })))
+        }
+
+        // Load availabilities
+        const { data: availData } = await supabase
+          .from('availabilities')
+          .select('*')
+          .eq('organization_id', organization.id)
+          .gte('date', weekStartStr)
+          .lte('date', weekEndStr)
+
+        if (availData) {
+          setAvailabilities(availData)
+        }
+
+      } catch (error) {
+        console.error('Error loading planning data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [organization, weekStart, weekEnd, supabase])
 
   const getShiftsForCell = useCallback(
     (agentId: string, date: string) => {
@@ -76,48 +170,86 @@ export function AdminPlanning() {
   )
 
   const isAgentUnavailable = useCallback((agentId: string, date: string) => {
-    const avail = demoAvailabilities.find(
-      (a) => a.agentId === agentId && a.date === date
+    const avail = availabilities.find(
+      (a) => a.agent_id === agentId && a.date === date
     )
     return avail?.available === false
-  }, [])
+  }, [availabilities])
 
   function handleCellClick(agentId: string, date: string) {
     setSelectedCell({ agentId, date })
-    setNewShiftSite(demoSites[0].id)
+    setNewShiftSite(sites[0]?.id || "")
     setNewShiftStart("08:00")
     setNewShiftEnd("20:00")
     setNewShiftNotes("")
     setShowAddDialog(true)
   }
 
-  function handleAddShift() {
-    if (!selectedCell || !newShiftSite) return
+  async function handleAddShift() {
+    if (!selectedCell || !newShiftSite || !organization) return
 
     const startH = parseInt(newShiftStart.split(":")[0])
     const isNight = startH >= 20 || startH < 6
     const date = parseISO(selectedCell.date)
     const isSun = date.getDay() === 0
 
-    const newShift: Shift = {
-      id: `shift-new-${Date.now()}`,
-      agentId: selectedCell.agentId,
-      siteId: newShiftSite,
-      date: selectedCell.date,
-      startTime: newShiftStart,
-      endTime: newShiftEnd,
-      notes: newShiftNotes || undefined,
-      isNight,
-      isSunday: isSun,
-    }
+    try {
+      const { data, error } = await supabase
+        .from('shifts')
+        .insert({
+          organization_id: organization.id,
+          agent_id: selectedCell.agentId,
+          site_id: newShiftSite,
+          date: selectedCell.date,
+          start_time: newShiftStart,
+          end_time: newShiftEnd,
+          notes: newShiftNotes || null,
+          is_night: isNight,
+          is_sunday: isSun,
+          status: 'scheduled',
+        })
+        .select()
+        .single()
 
-    setShifts((prev) => [...prev, newShift])
-    setShowAddDialog(false)
-    setSelectedCell(null)
+      if (error) throw error
+
+      if (data) {
+        const newShift: Shift = {
+          id: data.id,
+          organization_id: data.organization_id,
+          agentId: data.agent_id,
+          siteId: data.site_id,
+          date: data.date,
+          startTime: data.start_time,
+          endTime: data.end_time,
+          notes: data.notes || undefined,
+          isNight: data.is_night,
+          isSunday: data.is_sunday,
+          status: data.status,
+        }
+        setShifts((prev) => [...prev, newShift])
+      }
+
+      setShowAddDialog(false)
+      setSelectedCell(null)
+    } catch (error) {
+      console.error('Error adding shift:', error)
+    }
   }
 
-  function removeShift(shiftId: string) {
-    setShifts((prev) => prev.filter((s) => s.id !== shiftId))
+  async function removeShift(shiftId: string) {
+    try {
+      const { error } = await supabase
+        .from('shifts')
+        .delete()
+        .eq('id', shiftId)
+
+      if (error) throw error
+
+      setShifts((prev) => prev.filter((s) => s.id !== shiftId))
+    } catch (error) {
+      console.error('Error removing shift:', error)
+    }
   }
 
   function handlePublish() {
@@ -141,6 +273,14 @@ export function AdminPlanning() {
     })
     return map
   }, [agents, weekDays, getShiftsForCell])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Chargement du planning...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -251,7 +391,7 @@ export function AdminPlanning() {
                           </div>
                         )}
                         {cellShifts.map((shift) => {
-                          const site = demoSites.find((s) => s.id === shift.siteId)
+                          const site = sites.find((s) => s.id === shift.siteId)
                           return (
                             <button
                               key={shift.id}
@@ -340,7 +480,7 @@ export function AdminPlanning() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {demoSites.map((site) => (
+                    {sites.map((site) => (
                       <SelectItem key={site.id} value={site.id}>
                         {site.name}
                       </SelectItem>

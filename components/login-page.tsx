@@ -19,9 +19,9 @@ export function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
-    const success = await login(email, password)
-    if (!success) {
-      setError("Identifiants incorrects. Veuillez reessayer.")
+    const result = await login(email, password)
+    if (!result.success) {
+      setError(result.error || "Identifiants incorrects. Veuillez reessayer.")
     }
   }
 

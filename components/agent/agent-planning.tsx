@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth-context"
-import { demoShifts, demoSites, getShiftDurationHours } from "@/lib/demo-data"
+import { getShiftDurationHours } from "@/lib/demo-data"
+import type { Site, Shift } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,14 +29,80 @@ type ViewMode = "week" | "month"
 
 export function AgentPlanning() {
   const { user } = useAuth()
+  const supabase = createClient()
+  
   const [viewMode, setViewMode] = useState<ViewMode>("week")
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
+  const [myShifts, setMyShifts] = useState<Shift[]>([])
+  const [sites, setSites] = useState<Site[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const myShifts = useMemo(() => {
-    if (!user) return []
-    return demoShifts.filter((s) => s.agentId === user.id)
-  }, [user])
+  // Load shifts and sites from Supabase
+  useEffect(() => {
+    if (!user) return
+
+    async function loadData() {
+      setIsLoading(true)
+      try {
+        // Get date range
+        const start = viewMode === 'week'
+          ? startOfWeek(currentDate, { weekStartsOn: 1 })
+          : startOfMonth(currentDate)
+        const end = viewMode === 'week'
+          ? endOfWeek(currentDate, { weekStartsOn: 1 })
+          : endOfMonth(currentDate)
+
+        // Load shifts
+        const { data: shiftsData } = await supabase
+          .from('shifts')
+          .select('*')
+          .eq('agent_id', user.id)
+          .gte('date', format(start, 'yyyy-MM-dd'))
+          .lte('date', format(end, 'yyyy-MM-dd'))
+
+        if (shiftsData) {
+          setMyShifts(shiftsData.map(shift => ({
+            id: shift.id,
+            organization_id: shift.organization_id,
+            agentId: shift.agent_id,
+            siteId: shift.site_id,
+            date: shift.date,
+            startTime: shift.start_time,
+            endTime: shift.end_time,
+            notes: shift.notes || undefined,
+            isNight: shift.is_night,
+            isSunday: shift.is_sunday,
+            status: shift.status,
+          })))
+        }
+
+        // Load sites
+        const { data: sitesData } = await supabase
+          .from('sites')
+          .select('*')
+          .eq('organization_id', user.organization_id)
+
+        if (sitesData) {
+          setSites(sitesData.map(site => ({
+            id: site.id,
+            organization_id: site.organization_id,
+            name: site.name,
+            address: site.address,
+            contactName: site.contact_name || undefined,
+            contactPhone: site.contact_phone || undefined,
+          })))
+        }
+
+      } catch (error) {
+        console.error('Error loading planning:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [user, currentDate, viewMode, supabase])
 
   const dateRange = useMemo(() => {
     if (viewMode === "week") {
@@ -62,7 +130,7 @@ export function AgentPlanning() {
   }
 
   function getSiteById(siteId: string) {
-    return demoSites.find((s) => s.id === siteId)
+    return sites.find((s) => s.id === siteId)
   }
 
   const headerLabel =
@@ -71,6 +139,14 @@ export function AgentPlanning() {
       : format(currentDate, "MMMM yyyy", { locale: fr })
 
   const selectedDayShifts = selectedDay ? getShiftsForDay(selectedDay) : []
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Chargement du planning...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">

@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import { demoUsers, demoSites } from "@/lib/demo-data"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/lib/auth-context"
+import { checkAgentLimit, checkSiteLimit, getLimitMessage } from "@/lib/plan-limits"
 import type { User, Site } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -39,8 +41,12 @@ import {
 } from "lucide-react"
 
 export function AdminProfiles() {
-  const [agents, setAgents] = useState<User[]>(demoUsers.filter((u) => u.role === "agent"))
-  const [sites, setSites] = useState<Site[]>(demoSites)
+  const { organization } = useAuth()
+  const supabase = createClient()
+  
+  const [agents, setAgents] = useState<User[]>([])
+  const [sites, setSites] = useState<Site[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddAgent, setShowAddAgent] = useState(false)
   const [showAddSite, setShowAddSite] = useState(false)
@@ -62,6 +68,68 @@ export function AdminProfiles() {
     contactPhone: "",
   })
 
+  // Load data from Supabase
+  useEffect(() => {
+    if (!organization) return
+
+    async function loadData() {
+      setIsLoading(true)
+      try {
+        // Load agents
+        const { data: agentsData, error: agentsError } = await supabase
+          .from('user_profiles')
+          .select('*, auth_user:id')
+          .eq('organization_id', organization.id)
+          .eq('role', 'agent')
+
+        if (!agentsError && agentsData) {
+          // Get emails from auth.users
+          const agentIds = agentsData.map(a => a.id)
+          const { data: { users } } = await supabase.auth.admin.listUsers()
+          
+          const agentsWithEmails = agentsData.map(profile => {
+            const authUser = users?.find(u => u.id === profile.id)
+            return {
+              id: profile.id,
+              organization_id: profile.organization_id,
+              email: authUser?.email || '',
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              role: 'agent' as const,
+              phone: profile.phone || undefined,
+              certifications: profile.certifications || undefined,
+            }
+          })
+          setAgents(agentsWithEmails)
+        }
+
+        // Load sites
+        const { data: sitesData, error: sitesError } = await supabase
+          .from('sites')
+          .select('*')
+          .eq('organization_id', organization.id)
+
+        if (!sitesError && sitesData) {
+          setSites(sitesData.map(site => ({
+            id: site.id,
+            organization_id: site.organization_id,
+            name: site.name,
+            address: site.address,
+            contactName: site.contact_name || undefined,
+            contactPhone: site.contact_phone || undefined,
+          })))
+        }
+
+      } catch (error) {
+        console.error('Error loading profiles:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [organization, supabase])
+
   const filteredAgents = agents.filter((a) => {
     const q = searchQuery.toLowerCase()
     return (
@@ -76,43 +144,155 @@ export function AdminProfiles() {
     return s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)
   })
 
-  function handleAddAgent() {
-    const newAgent: User = {
-      id: `agent-${Date.now()}`,
-      email: agentForm.email,
-      firstName: agentForm.firstName,
-      lastName: agentForm.lastName,
-      role: "agent",
-      phone: agentForm.phone,
-      certifications: agentForm.certifications
-        .split(",")
-        .map((c) => c.trim())
-        .filter(Boolean),
+  async function handleAddAgent() {
+    if (!organization) return
+
+    // Check agent limit
+    const limitCheck = await checkAgentLimit(organization)
+    if (!limitCheck.allowed) {
+      alert(getLimitMessage('agents', limitCheck.limit))
+      return
     }
-    setAgents((prev) => [...prev, newAgent])
-    setShowAddAgent(false)
-    setAgentForm({ firstName: "", lastName: "", email: "", phone: "", certifications: "" })
-  }
 
-  function handleAddSite() {
-    const newSite: Site = {
-      id: `site-${Date.now()}`,
-      name: siteForm.name,
-      address: siteForm.address,
-      contactName: siteForm.contactName,
-      contactPhone: siteForm.contactPhone,
+    try {
+      // Create Supabase Auth user for the agent
+      const tempPassword = Math.random().toString(36).slice(-12)
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: agentForm.email,
+        password: tempPassword,
+        email_confirm: true,
+      })
+
+      if (authError) throw authError
+      if (!authData.user) throw new Error('Failed to create user')
+
+      // Create user profile
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: authData.user.id,
+          organization_id: organization.id,
+          first_name: agentForm.firstName,
+          last_name: agentForm.lastName,
+          role: 'agent',
+          phone: agentForm.phone || null,
+          certifications: agentForm.certifications
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean),
+        })
+
+      if (profileError) throw profileError
+
+      const newAgent: User = {
+        id: authData.user.id,
+        organization_id: organization.id,
+        email: agentForm.email,
+        firstName: agentForm.firstName,
+        lastName: agentForm.lastName,
+        role: "agent",
+        phone: agentForm.phone || undefined,
+        certifications: agentForm.certifications
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean),
+      }
+      
+      setAgents((prev) => [...prev, newAgent])
+      setShowAddAgent(false)
+      setAgentForm({ firstName: "", lastName: "", email: "", phone: "", certifications: "" })
+    } catch (error: any) {
+      console.error('Error adding agent:', error)
+      alert(`Erreur: ${error.message}`)
     }
-    setSites((prev) => [...prev, newSite])
-    setShowAddSite(false)
-    setSiteForm({ name: "", address: "", contactName: "", contactPhone: "" })
   }
 
-  function removeAgent(id: string) {
-    setAgents((prev) => prev.filter((a) => a.id !== id))
+  async function handleAddSite() {
+    if (!organization) return
+
+    // Check site limit
+    const limitCheck = await checkSiteLimit(organization)
+    if (!limitCheck.allowed) {
+      alert(getLimitMessage('sites', limitCheck.limit))
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('sites')
+        .insert({
+          organization_id: organization.id,
+          name: siteForm.name,
+          address: siteForm.address,
+          contact_name: siteForm.contactName || null,
+          contact_phone: siteForm.contactPhone || null,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const newSite: Site = {
+        id: data.id,
+        organization_id: data.organization_id,
+        name: data.name,
+        address: data.address,
+        contactName: data.contact_name || undefined,
+        contactPhone: data.contact_phone || undefined,
+      }
+      
+      setSites((prev) => [...prev, newSite])
+      setShowAddSite(false)
+      setSiteForm({ name: "", address: "", contactName: "", contactPhone: "" })
+    } catch (error: any) {
+      console.error('Error adding site:', error)
+      alert(`Erreur: ${error.message}`)
+    }
   }
 
-  function removeSite(id: string) {
-    setSites((prev) => prev.filter((s) => s.id !== id))
+  async function removeAgent(id: string) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet agent ?')) return
+
+    try {
+      // Delete user profile (cascade will handle auth user)
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setAgents((prev) => prev.filter((a) => a.id !== id))
+    } catch (error: any) {
+      console.error('Error removing agent:', error)
+      alert(`Erreur: ${error.message}`)
+    }
+  }
+
+  async function removeSite(id: string) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce site ?')) return
+
+    try {
+      const { error } = await supabase
+        .from('sites')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setSites((prev) => prev.filter((s) => s.id !== id))
+    } catch (error: any) {
+      console.error('Error removing site:', error)
+      alert(`Erreur: ${error.message}`)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Chargement des profils...</div>
+      </div>
+    )
   }
 
   return (
