@@ -11,7 +11,7 @@ const supabase = createClient(
 export async function POST(req: Request) {
   try {
     // Get session from cookies
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabaseClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.SUPABASE_SERVICE_ROLE_KEY || ''
