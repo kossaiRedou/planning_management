@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { AuthProvider, useAuth } from "@/lib/auth-context"
 import { LoginPage } from "@/components/login-page"
 import { AgentDashboard } from "@/components/agent/agent-dashboard"
