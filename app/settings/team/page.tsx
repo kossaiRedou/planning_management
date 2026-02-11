@@ -37,7 +37,7 @@ interface TeamMember {
   role: 'owner' | 'admin' | 'agent'
 }
 
-export default function TeamPage() {
+function TeamPageContent() {
   const { user, organization } = useAuth()
   const supabase = createClient()
   
@@ -354,4 +354,22 @@ export default function TeamPage() {
       </Dialog>
     </div>
   )
+}
+
+export default function TeamPage() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Chargement de l'équipe...</div>
+      </div>
+    )
+  }
+
+  return <TeamPageContent />
 }

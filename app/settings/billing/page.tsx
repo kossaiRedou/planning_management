@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Check, CreditCard, AlertCircle, Loader2 } from "lucide-react"
 
-export default function BillingPage() {
+function BillingPageContent() {
   const { organization, refreshUser } = useAuth()
   const supabase = createClient()
   
@@ -244,4 +244,22 @@ export default function BillingPage() {
       </Card>
     </div>
   )
+}
+
+export default function BillingPage() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-muted-foreground">Chargement...</div>
+      </div>
+    )
+  }
+
+  return <BillingPageContent />
 }
