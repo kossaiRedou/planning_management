@@ -46,14 +46,18 @@ export async function POST(req: Request) {
 
         // Extract metadata
         const adminEmail = session.customer_details?.email || session.metadata?.admin_email
+        const adminPassword = session.metadata?.admin_password
         const plan = session.metadata?.plan
         const customerId = session.customer as string
         const subscriptionId = session.subscription as string
 
-        if (!adminEmail || !plan) {
+        if (!adminEmail || !plan || !adminPassword) {
           console.error('Missing metadata in checkout session')
           return NextResponse.json({ error: 'Missing metadata' }, { status: 400 })
         }
+
+        // Decode the password from base64
+        const password = Buffer.from(adminPassword, 'base64').toString('utf-8')
 
         // Calculate trial end date (14 days from now)
         const trialEndsAt = new Date()
@@ -65,10 +69,9 @@ export async function POST(req: Request) {
 
         // If user doesn't exist, create it
         if (!userId) {
-          const tempPassword = Math.random().toString(36).slice(-12) + 'A1!'
           const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: adminEmail,
-            password: tempPassword,
+            password: password, // Use the password chosen by the user
             email_confirm: true,
             user_metadata: {
               first_name: session.metadata.admin_first_name,

@@ -55,7 +55,7 @@ export function LoginPage() {
           <Alert variant="default" className="w-full border-green-200 bg-green-50">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              Votre compte a été créé avec succès ! Vérifiez votre email pour définir votre mot de passe.
+              Votre compte a été créé avec succès ! Connectez-vous avec vos identifiants pour commencer.
             </AlertDescription>
           </Alert>
         )}

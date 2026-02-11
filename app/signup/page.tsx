@@ -91,6 +91,7 @@ export default function SignupPage() {
         body: JSON.stringify({
           plan: selectedPlan,
           adminEmail: adminEmail,
+          adminPassword: adminPassword,
           organizationData: {
             name: orgName,
             email: orgEmail,

@@ -101,7 +101,7 @@ export default function SignupSuccessPage() {
 
             {/* Next Steps */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Prochaines étapes :</h3>
+              <h3 className="font-semibold text-lg">Vous êtes prêt ! 🚀</h3>
               
               <div className="space-y-3">
                 <div className="flex gap-3">
@@ -109,9 +109,9 @@ export default function SignupSuccessPage() {
                     1
                   </div>
                   <div>
-                    <p className="font-medium">Vérifiez votre email</p>
+                    <p className="font-medium">Connectez-vous avec vos identifiants</p>
                     <p className="text-sm text-muted-foreground">
-                      Nous vous avons envoyé un email de bienvenue avec un lien pour définir votre mot de passe.
+                      Utilisez l'email et le mot de passe que vous avez choisis lors de l'inscription.
                     </p>
                   </div>
                 </div>
@@ -121,9 +121,9 @@ export default function SignupSuccessPage() {
                     2
                   </div>
                   <div>
-                    <p className="font-medium">Définissez votre mot de passe</p>
+                    <p className="font-medium">Configurez votre organisation</p>
                     <p className="text-sm text-muted-foreground">
-                      Cliquez sur le lien dans l'email pour choisir votre mot de passe.
+                      Ajoutez vos agents, créez vos sites et invitez d'autres administrateurs si besoin.
                     </p>
                   </div>
                 </div>
@@ -133,23 +133,23 @@ export default function SignupSuccessPage() {
                     3
                   </div>
                   <div>
-                    <p className="font-medium">Connectez-vous et commencez</p>
+                    <p className="font-medium">Commencez à planifier</p>
                     <p className="text-sm text-muted-foreground">
-                      Ajoutez vos agents, créez vos sites et planifiez vos missions.
+                      Créez vos premiers shifts et gérez les disponibilités de vos équipes.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Email Info */}
+            {/* Help Info */}
             <div className="rounded-lg border border-border bg-muted/50 p-4">
               <div className="flex items-start gap-3">
                 <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium mb-1">Vous n'avez pas reçu l'email ?</p>
+                  <p className="font-medium mb-1">Besoin d'aide pour démarrer ?</p>
                   <p className="text-muted-foreground">
-                    Vérifiez votre dossier spam ou contactez-nous à{' '}
+                    Notre équipe est disponible pour vous accompagner :{' '}
                     <a href="mailto:support@secu-planning.fr" className="text-primary hover:underline">
                       support@secu-planning.fr
                     </a>
