@@ -93,6 +93,16 @@ export function LoginPage() {
               </Button>
             </form>
 
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              Vous n'avez pas encore de compte ?{' '}
+              <a
+                href="/signup"
+                className="text-primary font-medium hover:underline"
+              >
+                Créer un compte
+              </a>
+            </div>
+
             <div className="mt-6 rounded-lg border border-border bg-muted/50 p-3">
               <p className="mb-2 text-xs font-medium text-muted-foreground">
                 Comptes de demonstration :

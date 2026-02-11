@@ -12,10 +12,12 @@ function AppContent() {
     return <LoginPage />
   }
 
-  if (user.role === "admin") {
+  // Owners and admins see the admin dashboard
+  if (user.role === "owner" || user.role === "admin") {
     return <AdminDashboard />
   }
 
+  // Agents see the agent dashboard
   return <AgentDashboard />
 }
 
