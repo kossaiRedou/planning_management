@@ -70,22 +70,7 @@ export default function SignupPage() {
     setError('')
 
     try {
-      // 1. Create Supabase Auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: adminEmail,
-        password: adminPassword,
-        options: {
-          data: {
-            first_name: adminFirstName,
-            last_name: adminLastName,
-          },
-        },
-      })
-
-      if (authError) throw authError
-      if (!authData.user) throw new Error('User creation failed')
-
-      // 2. Create Stripe Checkout Session
+      // Create Stripe Checkout Session (user will be created by webhook after payment)
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -93,7 +78,7 @@ export default function SignupPage() {
         },
         body: JSON.stringify({
           plan: selectedPlan,
-          userId: authData.user.id,
+          adminEmail: adminEmail,
           organizationData: {
             name: orgName,
             email: orgEmail,
@@ -111,7 +96,7 @@ export default function SignupPage() {
 
       if (checkoutError) throw new Error(checkoutError)
 
-      // 3. Redirect to Stripe Checkout
+      // Redirect to Stripe Checkout
       const stripe = await getStripe()
       if (!stripe) throw new Error('Stripe failed to load')
 

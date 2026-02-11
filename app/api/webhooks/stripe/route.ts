@@ -45,12 +45,12 @@ export async function POST(req: Request) {
         console.log('Checkout session completed:', session.id)
 
         // Extract metadata
-        const userId = session.metadata?.user_id
+        const adminEmail = session.customer_details?.email || session.metadata?.admin_email
         const plan = session.metadata?.plan
         const customerId = session.customer as string
         const subscriptionId = session.subscription as string
 
-        if (!userId || !plan) {
+        if (!adminEmail || !plan) {
           console.error('Missing metadata in checkout session')
           return NextResponse.json({ error: 'Missing metadata' }, { status: 400 })
         }
@@ -58,6 +58,38 @@ export async function POST(req: Request) {
         // Calculate trial end date (14 days from now)
         const trialEndsAt = new Date()
         trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+
+        // Check if user already exists
+        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+        let userId = existingUsers?.users.find(u => u.email === adminEmail)?.id
+
+        // If user doesn't exist, create it
+        if (!userId) {
+          const tempPassword = Math.random().toString(36).slice(-12) + 'A1!'
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: adminEmail,
+            password: tempPassword,
+            email_confirm: true,
+            user_metadata: {
+              first_name: session.metadata.admin_first_name,
+              last_name: session.metadata.admin_last_name,
+            },
+          })
+
+          if (authError) {
+            console.error('Error creating auth user:', authError)
+            throw authError
+          }
+
+          if (!authData.user) {
+            throw new Error('Failed to create auth user')
+          }
+
+          userId = authData.user.id
+          console.log('Auth user created:', userId)
+        } else {
+          console.log('Auth user already exists:', userId)
+        }
 
         // Create organization
         const { data: organization, error: orgError } = await supabaseAdmin

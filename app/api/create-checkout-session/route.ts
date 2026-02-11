@@ -3,9 +3,9 @@ import { stripe, PLANS } from '@/lib/stripe/server'
 
 export async function POST(req: Request) {
   try {
-    const { plan, userId, organizationData, adminData } = await req.json()
+    const { plan, adminEmail, organizationData, adminData } = await req.json()
 
-    if (!plan || !userId || !organizationData || !adminData) {
+    if (!plan || !adminEmail || !organizationData || !adminData) {
       return NextResponse.json(
         { error: 'Missing required data' },
         { status: 400 }
@@ -43,12 +43,12 @@ export async function POST(req: Request) {
       subscription_data: {
         trial_period_days: 14,
         metadata: {
-          user_id: userId,
+          admin_email: adminEmail,
           plan: plan,
         },
       },
       metadata: {
-        user_id: userId,
+        admin_email: adminEmail,
         plan: plan,
         organization_name: organizationData.name,
         organization_email: organizationData.email,
