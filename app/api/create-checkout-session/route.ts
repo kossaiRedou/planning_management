@@ -57,8 +57,8 @@ export async function POST(req: Request) {
         admin_first_name: adminData.firstName,
         admin_last_name: adminData.lastName,
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/signup`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/signup?canceled=true`,
     })
 
     return NextResponse.json({ sessionId: session.id })

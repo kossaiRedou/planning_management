@@ -2,19 +2,29 @@
 
 import React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Shield, Loader2, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Shield, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 
 export function LoginPage() {
   const { login, isLoading } = useAuth()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [welcomeMessage, setWelcomeMessage] = useState(false)
+
+  useEffect(() => {
+    if (searchParams?.get('welcome') === 'true') {
+      setWelcomeMessage(true)
+    }
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,6 +49,16 @@ export function LoginPage() {
             Gestion des plannings de securite
           </p>
         </div>
+
+        {/* Welcome Alert */}
+        {welcomeMessage && (
+          <Alert variant="default" className="w-full border-green-200 bg-green-50">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              Votre compte a été créé avec succès ! Vérifiez votre email pour définir votre mot de passe.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card className="w-full">
           <CardHeader className="text-center">

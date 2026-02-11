@@ -91,29 +91,62 @@ export async function POST(req: Request) {
           console.log('Auth user already exists:', userId)
         }
 
-        // Create organization
-        const { data: organization, error: orgError } = await supabaseAdmin
+        // Check if organization with this email already exists
+        const { data: existingOrg } = await supabaseAdmin
           .from('organizations')
-          .insert({
-            name: session.metadata.organization_name,
-            email: session.metadata.organization_email,
-            phone: session.metadata.organization_phone || null,
-            address: session.metadata.organization_address || null,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            subscription_status: 'trialing',
-            subscription_plan: plan,
-            trial_ends_at: trialEndsAt.toISOString(),
-          })
-          .select()
+          .select('id')
+          .eq('email', session.metadata.organization_email)
           .single()
 
-        if (orgError) {
-          console.error('Error creating organization:', orgError)
-          throw orgError
+        let organization
+
+        if (existingOrg) {
+          // Organization already exists, update it instead
+          console.log('Organization already exists, updating:', existingOrg.id)
+          const { data: updatedOrg, error: updateError } = await supabaseAdmin
+            .from('organizations')
+            .update({
+              stripe_customer_id: customerId,
+              stripe_subscription_id: subscriptionId,
+              subscription_status: 'trialing',
+              subscription_plan: plan,
+              trial_ends_at: trialEndsAt.toISOString(),
+            })
+            .eq('id', existingOrg.id)
+            .select()
+            .single()
+
+          if (updateError) {
+            console.error('Error updating organization:', updateError)
+            throw updateError
+          }
+          organization = updatedOrg
+        } else {
+          // Create new organization
+          const { data: newOrg, error: orgError } = await supabaseAdmin
+            .from('organizations')
+            .insert({
+              name: session.metadata.organization_name,
+              email: session.metadata.organization_email,
+              phone: session.metadata.organization_phone || null,
+              address: session.metadata.organization_address || null,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: subscriptionId,
+              subscription_status: 'trialing',
+              subscription_plan: plan,
+              trial_ends_at: trialEndsAt.toISOString(),
+            })
+            .select()
+            .single()
+
+          if (orgError) {
+            console.error('Error creating organization:', orgError)
+            throw orgError
+          }
+          organization = newOrg
         }
 
-        console.log('Organization created:', organization.id)
+        console.log('Organization created/updated:', organization.id)
 
         // Create user profile
         const { error: profileError } = await supabaseAdmin

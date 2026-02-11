@@ -2,24 +2,36 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { getStripe } from "@/lib/stripe/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield, ArrowLeft, ArrowRight, Loader2, Check } from "lucide-react"
+import { Shield, ArrowLeft, ArrowRight, Loader2, Check, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 type Step = 'organization' | 'admin' | 'plan'
 
 export default function SignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('organization')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [canceledMessage, setCanceledMessage] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('canceled') === 'true') {
+      setCanceledMessage(true)
+      // Remove the parameter from URL after showing the message
+      const timer = setTimeout(() => setCanceledMessage(false), 10000)
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams])
 
   // Organization data
   const [orgName, setOrgName] = useState('')
@@ -128,6 +140,16 @@ export default function SignupPage() {
             Commencez à gérer vos plannings en quelques minutes
           </p>
         </div>
+
+        {/* Canceled Payment Alert */}
+        {canceledMessage && (
+          <Alert variant="default" className="mb-6 border-yellow-200 bg-yellow-50">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              Vous avez annulé le paiement. Vous pouvez reprendre votre inscription à tout moment.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Progress */}
         <div className="mb-8 flex items-center justify-center gap-2">
