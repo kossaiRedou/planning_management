@@ -160,7 +160,7 @@ export function AdminPlanning() {
     }
 
     loadData()
-  }, [organization, weekStart, weekEnd, supabase])
+  }, [organization, currentDate])
 
   const getShiftsForCell = useCallback(
     (agentId: string, date: string) => {
