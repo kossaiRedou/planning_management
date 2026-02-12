@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
@@ -12,19 +12,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 
-export function LoginPage() {
-  const { login, isLoading } = useAuth()
+function WelcomeAlert() {
   const searchParams = useSearchParams()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [welcomeMessage, setWelcomeMessage] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
 
   useEffect(() => {
     if (searchParams?.get('welcome') === 'true') {
-      setWelcomeMessage(true)
+      setShowWelcome(true)
     }
   }, [searchParams])
+
+  if (!showWelcome) return null
+
+  return (
+    <Alert variant="default" className="w-full border-green-200 bg-green-50">
+      <CheckCircle2 className="h-4 w-4 text-green-600" />
+      <AlertDescription className="text-green-800">
+        Votre compte a été créé avec succès ! Connectez-vous avec vos identifiants pour commencer.
+      </AlertDescription>
+    </Alert>
+  )
+}
+
+function LoginForm() {
+  const { login, isLoading } = useAuth()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -51,14 +65,9 @@ export function LoginPage() {
         </div>
 
         {/* Welcome Alert */}
-        {welcomeMessage && (
-          <Alert variant="default" className="w-full border-green-200 bg-green-50">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
-              Votre compte a été créé avec succès ! Connectez-vous avec vos identifiants pour commencer.
-            </AlertDescription>
-          </Alert>
-        )}
+        <Suspense fallback={null}>
+          <WelcomeAlert />
+        </Suspense>
 
         <Card className="w-full">
           <CardHeader className="text-center">
@@ -146,4 +155,8 @@ export function LoginPage() {
       </div>
     </div>
   )
+}
+
+export function LoginPage() {
+  return <LoginForm />
 }
