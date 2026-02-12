@@ -2,13 +2,14 @@
 
 export const dynamic = 'force-dynamic'
 
+import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, Mail } from "lucide-react"
 import Link from "next/link"
 
-export default function SignupErrorPage() {
+function ErrorContent() {
   const searchParams = useSearchParams()
   const errorType = searchParams.get('type')
 
@@ -104,5 +105,17 @@ export default function SignupErrorPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignupErrorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-muted-foreground">Chargement...</div>
+      </div>
+    }>
+      <ErrorContent />
+    </Suspense>
   )
 }
