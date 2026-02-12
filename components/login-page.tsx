@@ -43,7 +43,9 @@ function LoginForm() {
 
   // Redirect if already logged in
   useEffect(() => {
+    console.log('useEffect - user changed:', user ? `${user.firstName} ${user.lastName} (${user.role})` : 'null')
     if (user) {
+      console.log('Utilisateur connecté détecté dans useEffect, redirection vers /')
       router.push('/')
     }
   }, [user, router])
@@ -51,12 +53,19 @@ function LoginForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+    console.log('=== DÉBUT CONNEXION ===')
+    console.log('Email:', email)
+    
     const result = await login(email, password)
+    console.log('Résultat de login():', result)
+    
     if (!result.success) {
+      console.log('Connexion échouée:', result.error)
       setError(result.error || "Identifiants incorrects. Veuillez reessayer.")
     } else {
-      // Redirect to home page on success
+      console.log('Connexion réussie ! Redirection vers /')
       router.push('/')
+      console.log('router.push() appelé')
     }
   }
 
