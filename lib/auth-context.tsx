@@ -125,25 +125,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true)
     try {
+      console.log('Tentative de connexion avec:', email)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
+        console.error('Erreur de connexion:', error)
         setIsLoading(false)
-        return { success: false, error: error.message }
+        
+        // Translate common Supabase errors to French
+        let errorMessage = error.message
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Email ou mot de passe incorrect'
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Veuillez confirmer votre email avant de vous connecter'
+        } else if (error.message.includes('User not found')) {
+          errorMessage = 'Aucun compte trouvé avec cet email'
+        }
+        
+        return { success: false, error: errorMessage }
       }
 
       if (data.user) {
+        console.log('Connexion réussie, récupération du profil...')
         await fetchUserProfile(data.user.id)
       }
 
       setIsLoading(false)
       return { success: true }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Exception lors de la connexion:', error)
       setIsLoading(false)
-      return { success: false, error: 'Une erreur est survenue' }
+      return { success: false, error: error.message || 'Une erreur est survenue' }
     }
   }, [supabase, fetchUserProfile])
 
