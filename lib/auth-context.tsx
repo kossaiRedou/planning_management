@@ -122,26 +122,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchUserProfile])
 
   useEffect(() => {
+    let mounted = true
+
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
-      setSession(initialSession)
-      if (initialSession?.user) {
-        try {
-          await fetchUserProfile(initialSession.user.id)
-        } catch (error) {
-          console.error('Failed to fetch profile on mount:', error)
-          // Sign out if profile doesn't exist
-          await supabase.auth.signOut()
+    const initializeAuth = async () => {
+      try {
+        console.log('Initializing auth...')
+        const { data: { session: initialSession } } = await supabase.auth.getSession()
+        
+        if (!mounted) return
+
+        setSession(initialSession)
+        
+        if (initialSession?.user) {
+          console.log('Found existing session for user:', initialSession.user.id)
+          try {
+            await fetchUserProfile(initialSession.user.id)
+          } catch (error) {
+            console.error('Failed to fetch profile on mount:', error)
+            // Sign out if profile doesn't exist
+            await supabase.auth.signOut()
+            setSession(null)
+          }
+        } else {
+          console.log('No existing session found')
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error)
+      } finally {
+        if (mounted) {
+          console.log('Auth initialization complete, setting isLoading to false')
+          setIsLoading(false)
         }
       }
-      setIsLoading(false)
-    })
+    }
+
+    initializeAuth()
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+      console.log('Auth state changed:', _event)
       setSession(currentSession)
+      
       if (currentSession?.user) {
         try {
           await fetchUserProfile(currentSession.user.id)
@@ -158,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
   }, [supabase, fetchUserProfile])
