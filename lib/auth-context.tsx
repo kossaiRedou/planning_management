@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId)
+      
       // Fetch user profile
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
@@ -33,54 +35,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', userId)
         .single()
 
-      if (profileError) throw profileError
-
-      if (profile) {
-        // Fetch organization
-        const { data: org, error: orgError } = await supabase
-          .from('organizations')
-          .select('*')
-          .eq('id', profile.organization_id)
-          .single()
-
-        if (orgError) throw orgError
-
-        // Get auth user email
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-
-        setUser({
-          id: profile.id,
-          organization_id: profile.organization_id,
-          email: authUser?.email || '',
-          firstName: profile.first_name,
-          lastName: profile.last_name,
-          role: profile.role as "owner" | "admin" | "agent",
-          phone: profile.phone || undefined,
-          certifications: profile.certifications || undefined,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at,
-        })
-
-        if (org) {
-          setOrganization({
-            id: org.id,
-            name: org.name,
-            email: org.email,
-            phone: org.phone || undefined,
-            address: org.address || undefined,
-            logo_url: org.logo_url || undefined,
-            stripe_customer_id: org.stripe_customer_id || undefined,
-            stripe_subscription_id: org.stripe_subscription_id || undefined,
-            subscription_status: org.subscription_status as 'active' | 'trialing' | 'past_due' | 'canceled',
-            subscription_plan: org.subscription_plan as 'standard' | 'premium',
-            trial_ends_at: org.trial_ends_at || undefined,
-            created_at: org.created_at,
-            updated_at: org.updated_at,
-          })
-        }
+      if (profileError) {
+        console.error('Error fetching profile:', profileError)
+        throw profileError
       }
-    } catch (error) {
+
+      if (!profile) {
+        console.error('No profile found for user:', userId)
+        throw new Error('Profile not found')
+      }
+
+      console.log('Profile found:', profile)
+
+      // Fetch organization
+      const { data: org, error: orgError } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', profile.organization_id)
+        .single()
+
+      if (orgError) {
+        console.error('Error fetching organization:', orgError)
+        throw orgError
+      }
+
+      console.log('Organization found:', org)
+
+      // Get auth user email
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+
+      const userData = {
+        id: profile.id,
+        organization_id: profile.organization_id,
+        email: authUser?.email || '',
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        role: profile.role as "owner" | "admin" | "agent",
+        phone: profile.phone || undefined,
+        certifications: profile.certifications || undefined,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
+      }
+
+      console.log('Setting user data:', userData)
+      setUser(userData)
+
+      if (org) {
+        const orgData = {
+          id: org.id,
+          name: org.name,
+          email: org.email,
+          phone: org.phone || undefined,
+          address: org.address || undefined,
+          logo_url: org.logo_url || undefined,
+          stripe_customer_id: org.stripe_customer_id || undefined,
+          stripe_subscription_id: org.stripe_subscription_id || undefined,
+          subscription_status: org.subscription_status as 'active' | 'trialing' | 'past_due' | 'canceled',
+          subscription_plan: org.subscription_plan as 'standard' | 'premium',
+          trial_ends_at: org.trial_ends_at || undefined,
+          created_at: org.created_at,
+          updated_at: org.updated_at,
+        }
+        console.log('Setting organization data:', orgData)
+        setOrganization(orgData)
+      }
+    } catch (error: any) {
       console.error('Error fetching user profile:', error)
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
       setUser(null)
       setOrganization(null)
     }
