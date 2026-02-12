@@ -222,7 +222,15 @@ export function AdminProfiles() {
       setAgents((prev) => [...prev, newAgent])
       setShowAddAgent(false)
       setAgentForm({ firstName: "", lastName: "", email: "", phone: "", certifications: "" })
-      alert('Agent ajouté avec succès ! Un email avec les instructions de connexion a été envoyé.')
+      
+      // Show success message with default password
+      const message = `✅ Agent ajouté avec succès !\n\n` +
+        `📧 Email: ${agentForm.email}\n` +
+        `🔑 Mot de passe par défaut: ${result.defaultPassword}\n\n` +
+        `ℹ️ L'agent a également reçu un email pour réinitialiser son mot de passe.\n` +
+        `Il peut se connecter avec ce mot de passe ou en définir un nouveau via le lien dans l'email.`
+      
+      alert(message)
     } catch (error: any) {
       console.error('Error adding agent:', error)
       alert(`Erreur: ${error.message}`)

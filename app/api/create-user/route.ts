@@ -54,13 +54,13 @@ export async function POST(req: Request) {
       )
     }
 
-    // Generate a temporary password
-    const tempPassword = Math.random().toString(36).slice(-12) + 'A1!'
+    // Generate a default password (will be reset by user)
+    const defaultPassword = 'DAOU2024!' // Default password for all new users
 
     // Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: tempPassword,
+      password: defaultPassword,
       email_confirm: true,
       user_metadata: {
         first_name: firstName,
@@ -104,9 +104,28 @@ export async function POST(req: Request) {
       )
     }
 
+    // Send password reset email so user can set their own password
+    try {
+      const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'recovery',
+        email: email,
+      })
+
+      if (resetError) {
+        console.error('Error generating reset link:', resetError)
+        // Don't fail the entire operation if email fails
+      } else {
+        console.log('Password reset email sent to:', email)
+      }
+    } catch (emailError) {
+      console.error('Error sending password reset email:', emailError)
+      // Don't fail the entire operation if email fails
+    }
+
     return NextResponse.json({
       success: true,
       userId: authData.user.id,
+      defaultPassword: defaultPassword, // Return default password so admin can communicate it
     })
   } catch (error: any) {
     console.error('Create user error:', error)

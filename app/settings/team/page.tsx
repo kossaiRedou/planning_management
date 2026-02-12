@@ -154,7 +154,14 @@ function TeamPageContent() {
       setInviteRole('admin')
       setShowInviteDialog(false)
 
-      alert('Membre invité avec succès ! Un email avec les instructions de connexion lui a été envoyé.')
+      // Show success message with default password
+      const message = `✅ Membre invité avec succès !\n\n` +
+        `📧 Email: ${inviteEmail}\n` +
+        `🔑 Mot de passe par défaut: ${result.defaultPassword}\n\n` +
+        `ℹ️ Le membre a également reçu un email pour réinitialiser son mot de passe.\n` +
+        `Il peut se connecter avec ce mot de passe ou en définir un nouveau via le lien dans l'email.`
+      
+      alert(message)
     } catch (error: any) {
       console.error('Error inviting member:', error)
       alert(`Erreur: ${error.message}`)
