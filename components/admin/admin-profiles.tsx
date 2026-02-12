@@ -75,32 +75,40 @@ export function AdminProfiles() {
     async function loadData() {
       setIsLoading(true)
       try {
-        // Load agents
-        const { data: agentsData, error: agentsError } = await supabase
-          .from('user_profiles')
-          .select('*, auth_user:id')
-          .eq('organization_id', organization.id)
-          .eq('role', 'agent')
+        // Get current session token
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          console.error('No session found')
+          setIsLoading(false)
+          return
+        }
 
-        if (!agentsError && agentsData) {
-          // Get emails from auth.users
-          const agentIds = agentsData.map(a => a.id)
-          const { data: { users } } = await supabase.auth.admin.listUsers()
+        // Load agents from API route (server-side to access emails)
+        const response = await fetch('/api/get-users', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        })
+
+        if (response.ok) {
+          const { profiles } = await response.json()
           
-          const agentsWithEmails = agentsData.map(profile => {
-            const authUser = users?.find(u => u.id === profile.id)
-            return {
+          const agentsWithEmails = profiles
+            .filter((p: any) => p.role === 'agent')
+            .map((profile: any) => ({
               id: profile.id,
               organization_id: profile.organization_id,
-              email: authUser?.email || '',
+              email: profile.email || '',
               firstName: profile.first_name,
               lastName: profile.last_name,
               role: 'agent' as const,
               phone: profile.phone || undefined,
               certifications: profile.certifications || undefined,
-            }
-          })
+            }))
+          
           setAgents(agentsWithEmails)
+        } else {
+          console.error('Failed to load agents')
         }
 
         // Load sites
@@ -155,37 +163,50 @@ export function AdminProfiles() {
     }
 
     try {
-      // Create Supabase Auth user for the agent
-      const tempPassword = Math.random().toString(36).slice(-12)
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: agentForm.email,
-        password: tempPassword,
-        email_confirm: true,
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
+
+      // Call API route to create user (server-side)
+      const response = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          email: agentForm.email,
+          firstName: agentForm.firstName,
+          lastName: agentForm.lastName,
+          role: 'agent',
+          organizationId: organization.id,
+        }),
       })
 
-      if (authError) throw authError
-      if (!authData.user) throw new Error('Failed to create user')
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create user')
+      }
 
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: authData.user.id,
-          organization_id: organization.id,
-          first_name: agentForm.firstName,
-          last_name: agentForm.lastName,
-          role: 'agent',
-          phone: agentForm.phone || null,
-          certifications: agentForm.certifications
-            .split(",")
-            .map((c) => c.trim())
-            .filter(Boolean),
-        })
+      // Update phone and certifications if provided
+      if (agentForm.phone || agentForm.certifications) {
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update({
+            phone: agentForm.phone || null,
+            certifications: agentForm.certifications
+              .split(",")
+              .map((c) => c.trim())
+              .filter(Boolean),
+          })
+          .eq('id', result.userId)
 
-      if (profileError) throw profileError
+        if (updateError) console.error('Error updating profile details:', updateError)
+      }
 
       const newAgent: User = {
-        id: authData.user.id,
+        id: result.userId,
         organization_id: organization.id,
         email: agentForm.email,
         firstName: agentForm.firstName,
@@ -201,6 +222,7 @@ export function AdminProfiles() {
       setAgents((prev) => [...prev, newAgent])
       setShowAddAgent(false)
       setAgentForm({ firstName: "", lastName: "", email: "", phone: "", certifications: "" })
+      alert('Agent ajouté avec succès ! Un email avec les instructions de connexion a été envoyé.')
     } catch (error: any) {
       console.error('Error adding agent:', error)
       alert(`Erreur: ${error.message}`)

@@ -1,0 +1,118 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/database.types'
+
+// Initialize Supabase with service role key for admin operations
+const supabaseAdmin = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+)
+
+export async function POST(req: Request) {
+  try {
+    const { email, firstName, lastName, role, organizationId } = await req.json()
+
+    if (!email || !firstName || !lastName || !role || !organizationId) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Verify the requesting user is an admin/owner of the organization
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user is admin/owner of the organization
+    const { data: requestingUserProfile } = await supabaseAdmin
+      .from('user_profiles')
+      .select('role, organization_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!requestingUserProfile || 
+        requestingUserProfile.organization_id !== organizationId ||
+        !['owner', 'admin'].includes(requestingUserProfile.role)) {
+      return NextResponse.json(
+        { error: 'Forbidden: Only organization admins can create users' },
+        { status: 403 }
+      )
+    }
+
+    // Generate a temporary password
+    const tempPassword = Math.random().toString(36).slice(-12) + 'A1!'
+
+    // Create auth user
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName,
+      },
+    })
+
+    if (authError) {
+      console.error('Error creating auth user:', authError)
+      return NextResponse.json(
+        { error: authError.message },
+        { status: 400 }
+      )
+    }
+
+    if (!authData.user) {
+      return NextResponse.json(
+        { error: 'Failed to create user' },
+        { status: 500 }
+      )
+    }
+
+    // Create user profile
+    const { error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .insert({
+        id: authData.user.id,
+        organization_id: organizationId,
+        first_name: firstName,
+        last_name: lastName,
+        role: role,
+      })
+
+    if (profileError) {
+      console.error('Error creating user profile:', profileError)
+      // Clean up: delete the auth user if profile creation fails
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      return NextResponse.json(
+        { error: profileError.message },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      userId: authData.user.id,
+    })
+  } catch (error: any) {
+    console.error('Create user error:', error)
+    return NextResponse.json(
+      { error: error.message || 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

@@ -58,28 +58,35 @@ function TeamPageContent() {
     async function loadTeamMembers() {
       setIsLoading(true)
       try {
-        // Load all users in the organization (not just agents)
-        const { data: profiles } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('organization_id', organization.id)
+        // Get current session token
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          console.error('No session found')
+          setIsLoading(false)
+          return
+        }
 
-        if (profiles) {
-          // Get auth users to fetch emails
-          const { data: { users } } = await supabase.auth.admin.listUsers()
+        // Load all users in the organization from API route
+        const response = await fetch('/api/get-users', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        })
+
+        if (response.ok) {
+          const { profiles } = await response.json()
           
-          const members: TeamMember[] = profiles.map(profile => {
-            const authUser = users?.find(u => u.id === profile.id)
-            return {
-              id: profile.id,
-              firstName: profile.first_name,
-              lastName: profile.last_name,
-              email: authUser?.email || '',
-              role: profile.role as 'owner' | 'admin' | 'agent',
-            }
-          })
+          const members: TeamMember[] = profiles.map((profile: any) => ({
+            id: profile.id,
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            email: profile.email || '',
+            role: profile.role as 'owner' | 'admin' | 'agent',
+          }))
 
           setTeamMembers(members)
+        } else {
+          console.error('Failed to load team members')
         }
       } catch (error) {
         console.error('Error loading team:', error)
@@ -105,33 +112,35 @@ function TeamPageContent() {
 
     setInviting(true)
     try {
-      // Create auth user
-      const tempPassword = Math.random().toString(36).slice(-12)
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: inviteEmail,
-        password: tempPassword,
-        email_confirm: true,
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Not authenticated')
+
+      // Call API route to create user (server-side)
+      const response = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          email: inviteEmail,
+          firstName: inviteFirstName,
+          lastName: inviteLastName,
+          role: inviteRole,
+          organizationId: organization.id,
+        }),
       })
 
-      if (authError) throw authError
-      if (!authData.user) throw new Error('Failed to create user')
-
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: authData.user.id,
-          organization_id: organization.id,
-          first_name: inviteFirstName,
-          last_name: inviteLastName,
-          role: inviteRole,
-        })
-
-      if (profileError) throw profileError
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create user')
+      }
 
       // Add to local state
       setTeamMembers(prev => [...prev, {
-        id: authData.user.id,
+        id: result.userId,
         firstName: inviteFirstName,
         lastName: inviteLastName,
         email: inviteEmail,
