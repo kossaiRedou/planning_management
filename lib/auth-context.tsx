@@ -109,6 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       setUser(null)
       setOrganization(null)
+      // Re-throw the error so the caller knows it failed
+      throw error
     }
   }, [supabase])
 
@@ -121,10 +123,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
       setSession(initialSession)
       if (initialSession?.user) {
-        fetchUserProfile(initialSession.user.id)
+        try {
+          await fetchUserProfile(initialSession.user.id)
+        } catch (error) {
+          console.error('Failed to fetch profile on mount:', error)
+          // Sign out if profile doesn't exist
+          await supabase.auth.signOut()
+        }
       }
       setIsLoading(false)
     })
@@ -135,7 +143,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       setSession(currentSession)
       if (currentSession?.user) {
-        await fetchUserProfile(currentSession.user.id)
+        try {
+          await fetchUserProfile(currentSession.user.id)
+        } catch (error) {
+          console.error('Failed to fetch profile on auth change:', error)
+          setUser(null)
+          setOrganization(null)
+        }
       } else {
         setUser(null)
         setOrganization(null)
@@ -176,7 +190,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.user) {
         console.log('Connexion réussie, récupération du profil...')
-        await fetchUserProfile(data.user.id)
+        try {
+          await fetchUserProfile(data.user.id)
+          console.log('Profil récupéré avec succès')
+        } catch (profileError: any) {
+          console.error('Erreur lors de la récupération du profil:', profileError)
+          // Disconnect the user if profile fetch fails
+          await supabase.auth.signOut()
+          setIsLoading(false)
+          return { 
+            success: false, 
+            error: 'Votre compte existe mais votre profil est introuvable. Veuillez contacter le support.' 
+          }
+        }
       }
 
       setIsLoading(false)
