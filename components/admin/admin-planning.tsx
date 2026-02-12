@@ -274,6 +274,28 @@ export function AdminPlanning() {
     return map
   }, [agents, weekDays, getShiftsForCell])
 
+  // Count total hours per day (column totals)
+  const dayTotalHours = useMemo(() => {
+    const map: Record<string, number> = {}
+    weekDays.forEach((day) => {
+      const dateStr = format(day, "yyyy-MM-dd")
+      let total = 0
+      agents.forEach((agent) => {
+        const cellShifts = getShiftsForCell(agent.id, dateStr)
+        cellShifts.forEach((s) => {
+          total += getShiftDurationHours(s)
+        })
+      })
+      map[dateStr] = total
+    })
+    return map
+  }, [agents, weekDays, getShiftsForCell])
+
+  // Calculate grand total (all hours in the week)
+  const grandTotal = useMemo(() => {
+    return Object.values(agentWeekHours).reduce((sum, hours) => sum + hours, 0)
+  }, [agentWeekHours])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -330,7 +352,7 @@ export function AdminPlanning() {
           <ScrollArea className="w-full">
             <div className="min-w-[800px]">
               {/* Header row */}
-              <div className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-border">
+              <div className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-b border-border">
                 <div className="flex items-center border-r border-border px-4 py-3">
                   <span className="text-xs font-semibold text-muted-foreground uppercase">
                     Agent
@@ -341,7 +363,7 @@ export function AdminPlanning() {
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`flex flex-col items-center border-r border-border px-2 py-3 last:border-r-0 ${
+                      className={`flex flex-col items-center border-r border-border px-2 py-3 ${
                         today ? "bg-primary/5" : ""
                       }`}
                     >
@@ -354,13 +376,18 @@ export function AdminPlanning() {
                     </div>
                   )
                 })}
+                <div className="flex items-center justify-center bg-primary/10 px-4 py-3">
+                  <span className="text-xs font-semibold text-primary uppercase">
+                    Total
+                  </span>
+                </div>
               </div>
 
               {/* Agent rows */}
               {agents.map((agent) => (
                 <div
                   key={agent.id}
-                  className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-border last:border-b-0"
+                  className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-b border-border last:border-b-0"
                 >
                   <div className="flex items-center gap-2 border-r border-border px-4 py-3">
                     <div className="flex flex-col">
@@ -381,7 +408,7 @@ export function AdminPlanning() {
                     return (
                       <div
                         key={dateStr}
-                        className={`group relative flex min-h-[72px] flex-col gap-1 border-r border-border p-1.5 last:border-r-0 ${
+                        className={`group relative flex min-h-[72px] flex-col gap-1 border-r border-border p-1.5 ${
                           today ? "bg-primary/5" : ""
                         } ${unavailable ? "bg-destructive/5" : ""}`}
                       >
@@ -423,8 +450,47 @@ export function AdminPlanning() {
                       </div>
                     )
                   })}
+                  {/* Total column for this agent */}
+                  <div className="flex items-center justify-center bg-primary/5 px-4 py-3">
+                    <span className="text-base font-bold text-primary">
+                      {agentWeekHours[agent.id] || 0}h
+                    </span>
+                  </div>
                 </div>
               ))}
+
+              {/* Totals row (by day) */}
+              <div className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-t-2 border-primary/20 bg-primary/5">
+                <div className="flex items-center border-r border-border px-4 py-3">
+                  <span className="text-sm font-bold text-primary uppercase">
+                    Total par jour
+                  </span>
+                </div>
+                {weekDays.map((day) => {
+                  const dateStr = format(day, "yyyy-MM-dd")
+                  const totalHours = dayTotalHours[dateStr] || 0
+                  const today = isToday(day)
+
+                  return (
+                    <div
+                      key={dateStr}
+                      className={`flex items-center justify-center border-r border-border px-2 py-3 ${
+                        today ? "bg-primary/10" : ""
+                      }`}
+                    >
+                      <span className="text-base font-bold text-primary">
+                        {totalHours}h
+                      </span>
+                    </div>
+                  )
+                })}
+                {/* Grand total */}
+                <div className="flex items-center justify-center bg-primary/10 px-4 py-3">
+                  <span className="text-lg font-extrabold text-primary">
+                    {grandTotal}h
+                  </span>
+                </div>
+              </div>
             </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
