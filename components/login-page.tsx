@@ -3,7 +3,7 @@
 import React, { Suspense } from "react"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,10 +35,18 @@ function WelcomeAlert() {
 }
 
 function LoginForm() {
-  const { login, isLoading } = useAuth()
+  const { login, isLoading, user } = useAuth()
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push('/')
+    }
+  }, [user, router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,6 +54,9 @@ function LoginForm() {
     const result = await login(email, password)
     if (!result.success) {
       setError(result.error || "Identifiants incorrects. Veuillez reessayer.")
+    } else {
+      // Redirect to home page on success
+      router.push('/')
     }
   }
 
