@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth-context"
-import { getShiftDurationHours } from "@/lib/demo-data"
+import { getShiftDurationHours } from "@/lib/shift-utils"
 import type { Shift, Site, User } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -74,17 +74,20 @@ export function AdminPlanning() {
     if (!organization) return
 
     async function loadData() {
+      if (!organization) return
+      const orgId = organization.id
+      
       setIsLoading(true)
       try {
         // Load agents
         const { data: agentsData } = await supabase
           .from('user_profiles')
           .select('*')
-          .eq('organization_id', organization.id)
+          .eq('organization_id', orgId)
           .eq('role', 'agent')
 
         if (agentsData) {
-          setAgents(agentsData.map(profile => ({
+          setAgents((agentsData as any[]).map(profile => ({
             id: profile.id,
             organization_id: profile.organization_id,
             email: '', // Email not in profile table
@@ -100,10 +103,10 @@ export function AdminPlanning() {
         const { data: sitesData } = await supabase
           .from('sites')
           .select('*')
-          .eq('organization_id', organization.id)
+          .eq('organization_id', orgId)
 
         if (sitesData) {
-          setSites(sitesData.map(site => ({
+          setSites((sitesData as any[]).map(site => ({
             id: site.id,
             organization_id: site.organization_id,
             name: site.name,
@@ -120,12 +123,12 @@ export function AdminPlanning() {
         const { data: shiftsData } = await supabase
           .from('shifts')
           .select('*')
-          .eq('organization_id', organization.id)
+          .eq('organization_id', orgId)
           .gte('date', weekStartStr)
           .lte('date', weekEndStr)
 
         if (shiftsData) {
-          setShifts(shiftsData.map(shift => ({
+          setShifts((shiftsData as any[]).map(shift => ({
             id: shift.id,
             organization_id: shift.organization_id,
             agentId: shift.agent_id,
@@ -144,12 +147,12 @@ export function AdminPlanning() {
         const { data: availData } = await supabase
           .from('availabilities')
           .select('*')
-          .eq('organization_id', organization.id)
+          .eq('organization_id', orgId)
           .gte('date', weekStartStr)
           .lte('date', weekEndStr)
 
         if (availData) {
-          setAvailabilities(availData)
+          setAvailabilities(availData as any[])
         }
 
       } catch (error) {
@@ -188,16 +191,17 @@ export function AdminPlanning() {
   async function handleAddShift() {
     if (!selectedCell || !newShiftSite || !organization) return
 
+    const orgId = organization.id
     const startH = parseInt(newShiftStart.split(":")[0])
     const isNight = startH >= 20 || startH < 6
     const date = parseISO(selectedCell.date)
     const isSun = date.getDay() === 0
 
     try {
-      const { data, error } = await supabase
-        .from('shifts')
+      const { data, error } = await (supabase
+        .from('shifts') as any)
         .insert({
-          organization_id: organization.id,
+          organization_id: orgId,
           agent_id: selectedCell.agentId,
           site_id: newShiftSite,
           date: selectedCell.date,

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth-context"
-import { getShiftDurationHours } from "@/lib/demo-data"
+import { getShiftDurationHours } from "@/lib/shift-utils"
 import type { Site, Shift } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,10 @@ export function AgentHours() {
     if (!user) return
 
     async function loadShifts() {
+      if (!user) return
+      const userId = user.id
+      const userOrgId = user.organization_id
+      
       setIsLoading(true)
       try {
         const start = startOfMonth(currentMonth)
@@ -44,13 +48,13 @@ export function AgentHours() {
         const { data: shiftsData } = await supabase
           .from('shifts')
           .select('*')
-          .eq('agent_id', user.id)
+          .eq('agent_id', userId)
           .gte('date', format(start, 'yyyy-MM-dd'))
           .lte('date', format(end, 'yyyy-MM-dd'))
           .order('date', { ascending: true })
 
         if (shiftsData) {
-          setMyShifts(shiftsData.map(shift => ({
+          setMyShifts((shiftsData as any[]).map(shift => ({
             id: shift.id,
             organization_id: shift.organization_id,
             agentId: shift.agent_id,
@@ -69,10 +73,10 @@ export function AgentHours() {
         const { data: sitesData } = await supabase
           .from('sites')
           .select('*')
-          .eq('organization_id', user.organization_id)
+          .eq('organization_id', userOrgId)
 
         if (sitesData) {
-          setSites(sitesData.map(site => ({
+          setSites((sitesData as any[]).map(site => ({
             id: site.id,
             organization_id: site.organization_id,
             name: site.name,

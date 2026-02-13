@@ -31,6 +31,8 @@ function BillingPageContent() {
   const isActive = ['active', 'trialing'].includes(organization.subscription_status)
 
   async function handleUpgrade() {
+    if (!organization) return
+    
     setIsLoading(true)
     try {
       const newPlan = organization.subscription_plan === 'standard' ? 'premium' : 'standard'
@@ -77,6 +79,8 @@ function BillingPageContent() {
   }
 
   const getStatusBadge = () => {
+    if (!organization) return null
+    
     switch (organization.subscription_status) {
       case 'active':
         return <Badge className="bg-green-500">Actif</Badge>

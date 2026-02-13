@@ -51,10 +51,13 @@ export async function POST(req: Request) {
         const customerId = session.customer as string
         const subscriptionId = session.subscription as string
 
-        if (!adminEmail || !plan || !adminPassword) {
+        if (!adminEmail || !plan || !adminPassword || !session.metadata) {
           console.error('Missing metadata in checkout session')
           return NextResponse.json({ error: 'Missing metadata' }, { status: 400 })
         }
+
+        // Type-safe access to metadata after null check
+        const metadata = session.metadata
 
         // Decode the password from base64
         const password = Buffer.from(adminPassword, 'base64').toString('utf-8')
@@ -74,8 +77,8 @@ export async function POST(req: Request) {
             password: password, // Use the password chosen by the user
             email_confirm: true,
             user_metadata: {
-              first_name: session.metadata.admin_first_name,
-              last_name: session.metadata.admin_last_name,
+              first_name: metadata.admin_first_name,
+              last_name: metadata.admin_last_name,
             },
           })
 
@@ -95,26 +98,32 @@ export async function POST(req: Request) {
         }
 
         // Check if organization with this email already exists
-        const { data: existingOrg } = await supabaseAdmin
+        const { data: existingOrgData } = await supabaseAdmin
           .from('organizations')
           .select('id')
-          .eq('email', session.metadata.organization_email)
-          .single()
+          .eq('email', metadata.organization_email)
+          .maybeSingle()
 
         let organization
 
-        if (existingOrg) {
+        if (existingOrgData) {
+          // Type assertion for TypeScript
+          const existingOrg = existingOrgData as { id: string }
+          
           // Organization already exists, update it instead
           console.log('Organization already exists, updating:', existingOrg.id)
-          const { data: updatedOrg, error: updateError } = await supabaseAdmin
-            .from('organizations')
-            .update({
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-              subscription_status: 'trialing',
-              subscription_plan: plan,
-              trial_ends_at: trialEndsAt.toISOString(),
-            })
+          
+          const updateData = {
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            subscription_status: 'trialing',
+            subscription_plan: plan,
+            trial_ends_at: trialEndsAt.toISOString(),
+          }
+          
+          const { data: updatedOrg, error: updateError } = await (supabaseAdmin
+            .from('organizations') as any)
+            .update(updateData)
             .eq('id', existingOrg.id)
             .select()
             .single()
@@ -127,10 +136,10 @@ export async function POST(req: Request) {
         } else {
           // Create new organization
           const orgData = {
-            name: session.metadata.organization_name,
-            email: session.metadata.organization_email,
-            phone: session.metadata.organization_phone || null,
-            address: session.metadata.organization_address || null,
+            name: metadata.organization_name,
+            email: metadata.organization_email,
+            phone: metadata.organization_phone || null,
+            address: metadata.organization_address || null,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
             subscription_status: 'trialing' as const,
@@ -157,8 +166,8 @@ export async function POST(req: Request) {
         const userProfileData = {
           id: userId,
           organization_id: organization.id,
-          first_name: session.metadata.admin_first_name,
-          last_name: session.metadata.admin_last_name,
+          first_name: metadata.admin_first_name,
+          last_name: metadata.admin_last_name,
           role: 'owner' as const,
         }
 
@@ -180,8 +189,8 @@ export async function POST(req: Request) {
         console.log('Subscription updated:', subscription.id)
 
         // Update organization subscription status
-        const { error } = await supabaseAdmin
-          .from('organizations')
+        const { error } = await (supabaseAdmin
+          .from('organizations') as any)
           .update({
             subscription_status: subscription.status,
           })
@@ -199,8 +208,8 @@ export async function POST(req: Request) {
         console.log('Subscription deleted:', subscription.id)
 
         // Mark organization as canceled
-        const { error } = await supabaseAdmin
-          .from('organizations')
+        const { error } = await (supabaseAdmin
+          .from('organizations') as any)
           .update({
             subscription_status: 'canceled',
           })
@@ -219,8 +228,8 @@ export async function POST(req: Request) {
 
         if (invoice.subscription) {
           // Update subscription status to active
-          const { error } = await supabaseAdmin
-            .from('organizations')
+          const { error } = await (supabaseAdmin
+            .from('organizations') as any)
             .update({
               subscription_status: 'active',
             })
@@ -240,8 +249,8 @@ export async function POST(req: Request) {
 
         if (invoice.subscription) {
           // Update subscription status to past_due
-          const { error } = await supabaseAdmin
-            .from('organizations')
+          const { error } = await (supabaseAdmin
+            .from('organizations') as any)
             .update({
               subscription_status: 'past_due',
             })

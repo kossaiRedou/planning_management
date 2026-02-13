@@ -100,6 +100,7 @@ function TeamPageContent() {
 
   async function handleInvite() {
     if (!organization || !inviteEmail || !inviteFirstName || !inviteLastName) return
+    const orgId = organization.id
 
     // Check limits if inviting an agent
     if (inviteRole === 'agent') {
@@ -128,7 +129,7 @@ function TeamPageContent() {
           firstName: inviteFirstName,
           lastName: inviteLastName,
           role: inviteRole,
-          organizationId: organization.id,
+          organizationId: orgId,
         }),
       })
 

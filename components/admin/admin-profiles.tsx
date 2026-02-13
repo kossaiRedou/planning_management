@@ -73,6 +73,9 @@ export function AdminProfiles() {
     if (!organization) return
 
     async function loadData() {
+      if (!organization) return
+      const orgId = organization.id
+      
       setIsLoading(true)
       try {
         // Get current session token
@@ -115,10 +118,10 @@ export function AdminProfiles() {
         const { data: sitesData, error: sitesError } = await supabase
           .from('sites')
           .select('*')
-          .eq('organization_id', organization.id)
+          .eq('organization_id', orgId)
 
         if (!sitesError && sitesData) {
-          setSites(sitesData.map(site => ({
+          setSites((sitesData as any[]).map(site => ({
             id: site.id,
             organization_id: site.organization_id,
             name: site.name,
@@ -154,6 +157,7 @@ export function AdminProfiles() {
 
   async function handleAddAgent() {
     if (!organization) return
+    const orgId = organization.id
 
     // Check agent limit
     const limitCheck = await checkAgentLimit(organization)
@@ -179,7 +183,7 @@ export function AdminProfiles() {
           firstName: agentForm.firstName,
           lastName: agentForm.lastName,
           role: 'agent',
-          organizationId: organization.id,
+          organizationId: orgId,
         }),
       })
 
@@ -191,8 +195,8 @@ export function AdminProfiles() {
 
       // Update phone and certifications if provided
       if (agentForm.phone || agentForm.certifications) {
-        const { error: updateError } = await supabase
-          .from('user_profiles')
+        const { error: updateError } = await (supabase
+          .from('user_profiles') as any)
           .update({
             phone: agentForm.phone || null,
             certifications: agentForm.certifications
@@ -207,7 +211,7 @@ export function AdminProfiles() {
 
       const newAgent: User = {
         id: result.userId,
-        organization_id: organization.id,
+        organization_id: orgId,
         email: agentForm.email,
         firstName: agentForm.firstName,
         lastName: agentForm.lastName,
@@ -239,6 +243,7 @@ export function AdminProfiles() {
 
   async function handleAddSite() {
     if (!organization) return
+    const orgId = organization.id
 
     // Check site limit
     const limitCheck = await checkSiteLimit(organization)
@@ -248,10 +253,10 @@ export function AdminProfiles() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('sites')
+      const { data, error } = await (supabase
+        .from('sites') as any)
         .insert({
-          organization_id: organization.id,
+          organization_id: orgId,
           name: siteForm.name,
           address: siteForm.address,
           contact_name: siteForm.contactName || null,

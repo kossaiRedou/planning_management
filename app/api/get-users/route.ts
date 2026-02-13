@@ -52,9 +52,9 @@ export async function GET(req: Request) {
       .select('*')
       .eq('organization_id', userOrgId)
 
-    if (profilesError) {
+    if (profilesError || !profiles) {
       return NextResponse.json(
-        { error: profilesError.message },
+        { error: profilesError?.message || 'Failed to fetch profiles' },
         { status: 500 }
       )
     }
@@ -62,15 +62,15 @@ export async function GET(req: Request) {
     // Get emails from auth.users for these profiles
     const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers()
 
-    if (usersError) {
+    if (usersError || !users) {
       return NextResponse.json(
-        { error: usersError.message },
+        { error: usersError?.message || 'Failed to fetch users' },
         { status: 500 }
       )
     }
 
     // Combine profiles with emails
-    const profilesWithEmails = profiles.map(profile => {
+    const profilesWithEmails = (profiles as any[]).map((profile: any) => {
       const authUser = users.find(u => u.id === profile.id)
       return {
         ...profile,

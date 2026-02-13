@@ -41,6 +41,9 @@ export function AgentAvailability() {
     if (!user) return
 
     async function loadAvailabilities() {
+      if (!user) return
+      const userId = user.id
+      
       setIsLoading(true)
       try {
         const start = startOfMonth(currentMonth)
@@ -49,12 +52,12 @@ export function AgentAvailability() {
         const { data, error } = await supabase
           .from('availabilities')
           .select('*')
-          .eq('agent_id', user.id)
+          .eq('agent_id', userId)
           .gte('date', format(start, 'yyyy-MM-dd'))
           .lte('date', format(end, 'yyyy-MM-dd'))
 
         if (!error && data) {
-          setLocalAvailabilities(data.map(avail => ({
+          setLocalAvailabilities((data as any[]).map(avail => ({
             id: avail.id,
             organization_id: avail.organization_id,
             agentId: avail.agent_id,
@@ -88,16 +91,18 @@ export function AgentAvailability() {
 
   async function toggleDay(day: Date) {
     if (!user) return
+    const userId = user.id
+    const userOrgId = user.organization_id
     const dateStr = format(day, "yyyy-MM-dd")
     setSaved(false)
 
-    const existing = localAvailabilities.find((a) => a.agentId === user.id && a.date === dateStr)
+    const existing = localAvailabilities.find((a) => a.agentId === userId && a.date === dateStr)
     
     try {
       if (existing) {
         // Update existing
-        const { error } = await supabase
-          .from('availabilities')
+        const { error } = await (supabase
+          .from('availabilities') as any)
           .update({ available: !existing.available })
           .eq('id', existing.id)
 
@@ -110,11 +115,11 @@ export function AgentAvailability() {
         )
       } else {
         // Insert new
-        const { data, error } = await supabase
-          .from('availabilities')
+        const { data, error } = await (supabase
+          .from('availabilities') as any)
           .insert({
-            organization_id: user.organization_id,
-            agent_id: user.id,
+            organization_id: userOrgId,
+            agent_id: userId,
             date: dateStr,
             available: false,
           })

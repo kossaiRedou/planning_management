@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw profileError
       }
 
-      if (!profile || !profile.organization) {
+      if (!profile || !(profile as any).organization) {
         console.error('No profile or organization found')
         throw new Error('Profile not found')
       }
@@ -49,21 +49,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Get auth user email (from session, faster)
       const { data: { session: currentSession } } = await supabase.auth.getSession()
 
+      const profileData = profile as any
       const userData = {
-        id: profile.id,
-        organization_id: profile.organization_id,
+        id: profileData.id,
+        organization_id: profileData.organization_id,
         email: currentSession?.user?.email || '',
-        firstName: profile.first_name,
-        lastName: profile.last_name,
-        role: profile.role as "owner" | "admin" | "agent",
-        phone: profile.phone || undefined,
-        certifications: profile.certifications || undefined,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
+        firstName: profileData.first_name,
+        lastName: profileData.last_name,
+        role: profileData.role as "owner" | "admin" | "agent",
+        phone: profileData.phone || undefined,
+        certifications: profileData.certifications || undefined,
+        created_at: profileData.created_at,
+        updated_at: profileData.updated_at,
       }
       setUser(userData)
 
-      const org = profile.organization as any
+      const org = profileData.organization as any
       if (org) {
         const orgData = {
           id: org.id,
