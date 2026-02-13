@@ -3,9 +3,6 @@ const nextConfig = {
   // Optimize production builds
   reactStrictMode: true,
   
-  // Performance optimizations
-  swcMinify: true,
-  
   // Optimize images
   images: {
     formats: ['image/webp'],
@@ -20,16 +17,8 @@ const nextConfig = {
     } : false,
   },
   
-  // Webpack optimizations
-  webpack: (config, { isServer }) => {
-    // Optimize bundle
-    config.optimization = {
-      ...config.optimization,
-      usedExports: true,
-    }
-    
-    return config
-  },
+  // Turbopack configuration (Next.js 16+)
+  turbopack: {},
   
   // Enable experimental features for better performance
   experimental: {
