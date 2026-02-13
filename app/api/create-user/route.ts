@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     }
 
     // Create user profile
-    const { error: profileError } = await supabaseAdmin
+    const { error: insertError } = await supabaseAdmin
       .from('user_profiles')
       .insert({
         id: authData.user.id,
@@ -100,12 +100,12 @@ export async function POST(req: Request) {
         role: role,
       })
 
-    if (profileError) {
-      console.error('Error creating user profile:', profileError)
+    if (insertError) {
+      console.error('Error creating user profile:', insertError)
       // Clean up: delete the auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json(
-        { error: profileError.message },
+        { error: insertError.message },
         { status: 400 }
       )
     }
