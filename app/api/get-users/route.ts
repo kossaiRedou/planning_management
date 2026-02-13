@@ -44,13 +44,13 @@ export async function GET(req: Request) {
     }
 
     // Type-safe access after null check
-    const { organization_id } = userProfile as { organization_id: string; role: string }
+    const { organization_id: userOrgId } = userProfile as { organization_id: string; role: string }
 
     // Get all profiles in the user's organization
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('user_profiles')
       .select('*')
-      .eq('organization_id', organization_id)
+      .eq('organization_id', userOrgId)
 
     if (profilesError) {
       return NextResponse.json(
