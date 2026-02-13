@@ -126,19 +126,21 @@ export async function POST(req: Request) {
           organization = updatedOrg
         } else {
           // Create new organization
+          const orgData = {
+            name: session.metadata.organization_name,
+            email: session.metadata.organization_email,
+            phone: session.metadata.organization_phone || null,
+            address: session.metadata.organization_address || null,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            subscription_status: 'trialing' as const,
+            subscription_plan: plan,
+            trial_ends_at: trialEndsAt.toISOString(),
+          }
+
           const { data: newOrg, error: orgError } = await supabaseAdmin
             .from('organizations')
-            .insert({
-              name: session.metadata.organization_name,
-              email: session.metadata.organization_email,
-              phone: session.metadata.organization_phone || null,
-              address: session.metadata.organization_address || null,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-              subscription_status: 'trialing',
-              subscription_plan: plan,
-              trial_ends_at: trialEndsAt.toISOString(),
-            })
+            .insert(orgData as any)
             .select()
             .single()
 
@@ -152,15 +154,17 @@ export async function POST(req: Request) {
         console.log('Organization created/updated:', organization.id)
 
         // Create user profile
+        const userProfileData = {
+          id: userId,
+          organization_id: organization.id,
+          first_name: session.metadata.admin_first_name,
+          last_name: session.metadata.admin_last_name,
+          role: 'owner' as const,
+        }
+
         const { error: profileError } = await supabaseAdmin
           .from('user_profiles')
-          .insert({
-            id: userId,
-            organization_id: organization.id,
-            first_name: session.metadata.admin_first_name,
-            last_name: session.metadata.admin_last_name,
-            role: 'owner',
-          })
+          .insert(userProfileData as any)
 
         if (profileError) {
           console.error('Error creating user profile:', profileError)

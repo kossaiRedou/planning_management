@@ -92,15 +92,17 @@ export async function POST(req: Request) {
     }
 
     // Create user profile
+    const profileData = {
+      id: authData.user.id,
+      organization_id: organizationId,
+      first_name: firstName,
+      last_name: lastName,
+      role: role,
+    }
+
     const { error: insertError } = await supabaseAdmin
       .from('user_profiles')
-      .insert({
-        id: authData.user.id,
-        organization_id: organizationId,
-        first_name: firstName,
-        last_name: lastName,
-        role: role,
-      })
+      .insert(profileData as any)
 
     if (insertError) {
       console.error('Error creating user profile:', insertError)

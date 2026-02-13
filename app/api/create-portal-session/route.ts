@@ -35,26 +35,26 @@ export async function POST(req: Request) {
     }
 
     // Get user's organization
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('organization_id')
       .eq('id', userId)
       .single()
 
-    if (!profile) {
+    if (profileError || !profile) {
       return NextResponse.json(
         { error: 'Profile not found' },
         { status: 404 }
       )
     }
 
-    const { data: organization } = await supabase
+    const { data: organization, error: orgError } = await supabase
       .from('organizations')
       .select('stripe_customer_id')
       .eq('id', profile.organization_id)
       .single()
 
-    if (!organization?.stripe_customer_id) {
+    if (orgError || !organization?.stripe_customer_id) {
       return NextResponse.json(
         { error: 'No Stripe customer found' },
         { status: 404 }
