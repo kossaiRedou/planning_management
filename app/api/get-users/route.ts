@@ -30,24 +30,27 @@ export async function GET(req: Request) {
     }
 
     // Get user's organization
-    const { data: requestingUserProfile, error: profileError } = await supabaseAdmin
+    const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('role, organization_id')
       .eq('id', user.id)
       .single()
 
-    if (profileError || !requestingUserProfile) {
+    if (profileError || !userProfile) {
       return NextResponse.json(
         { error: 'Profile not found' },
         { status: 404 }
       )
     }
 
+    // Type-safe access after null check
+    const { organization_id } = userProfile as { organization_id: string; role: string }
+
     // Get all profiles in the user's organization
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('user_profiles')
       .select('*')
-      .eq('organization_id', requestingUserProfile.organization_id)
+      .eq('organization_id', organization_id)
 
     if (profilesError) {
       return NextResponse.json(
