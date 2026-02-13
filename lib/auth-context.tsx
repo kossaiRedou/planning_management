@@ -26,12 +26,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId)
-      
-      // Fetch user profile
+      // Optimize: Fetch profile with organization in a single query
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select(`
+          *,
+          organization:organizations(*)
+        `)
         .eq('id', userId)
         .single()
 
@@ -40,34 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw profileError
       }
 
-      if (!profile) {
-        console.error('No profile found for user:', userId)
+      if (!profile || !profile.organization) {
+        console.error('No profile or organization found')
         throw new Error('Profile not found')
       }
 
-      console.log('Profile found:', profile)
-
-      // Fetch organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('id', profile.organization_id)
-        .single()
-
-      if (orgError) {
-        console.error('Error fetching organization:', orgError)
-        throw orgError
-      }
-
-      console.log('Organization found:', org)
-
-      // Get auth user email
-      const { data: { user: authUser } } = await supabase.auth.getUser()
+      // Get auth user email (from session, faster)
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
 
       const userData = {
         id: profile.id,
         organization_id: profile.organization_id,
-        email: authUser?.email || '',
+        email: currentSession?.user?.email || '',
         firstName: profile.first_name,
         lastName: profile.last_name,
         role: profile.role as "owner" | "admin" | "agent",
@@ -76,10 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         created_at: profile.created_at,
         updated_at: profile.updated_at,
       }
-
-      console.log('Setting user data:', userData)
       setUser(userData)
 
+      const org = profile.organization as any
       if (org) {
         const orgData = {
           id: org.id,
@@ -96,20 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           created_at: org.created_at,
           updated_at: org.updated_at,
         }
-        console.log('Setting organization data:', orgData)
         setOrganization(orgData)
       }
     } catch (error: any) {
-      console.error('Error fetching user profile:', error)
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      })
+      console.error('Auth error:', error.message)
       setUser(null)
       setOrganization(null)
-      // Re-throw the error so the caller knows it failed
       throw error
     }
   }, [supabase])
@@ -127,7 +103,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get initial session
     const initializeAuth = async () => {
       try {
-        console.log('Initializing auth...')
         const { data: { session: initialSession } } = await supabase.auth.getSession()
         
         if (!mounted) return
@@ -135,23 +110,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(initialSession)
         
         if (initialSession?.user) {
-          console.log('Found existing session for user:', initialSession.user.id)
           try {
             await fetchUserProfile(initialSession.user.id)
           } catch (error) {
-            console.error('Failed to fetch profile on mount:', error)
             // Sign out if profile doesn't exist
             await supabase.auth.signOut()
             setSession(null)
           }
-        } else {
-          console.log('No existing session found')
         }
       } catch (error) {
-        console.error('Error initializing auth:', error)
+        console.error('Auth init error:', error)
       } finally {
         if (mounted) {
-          console.log('Auth initialization complete, setting isLoading to false')
           setIsLoading(false)
         }
       }
@@ -163,14 +133,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      console.log('Auth state changed:', _event)
       setSession(currentSession)
       
       if (currentSession?.user) {
         try {
           await fetchUserProfile(currentSession.user.id)
         } catch (error) {
-          console.error('Failed to fetch profile on auth change:', error)
           setUser(null)
           setOrganization(null)
         }
@@ -190,14 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      console.log('Tentative de connexion avec:', email)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        console.error('Erreur de connexion:', error)
         setIsLoading(false)
         
         // Translate common Supabase errors to French
@@ -214,12 +180,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
-        console.log('Connexion réussie, récupération du profil...')
         try {
           await fetchUserProfile(data.user.id)
-          console.log('Profil récupéré avec succès')
         } catch (profileError: any) {
-          console.error('Erreur lors de la récupération du profil:', profileError)
           // Disconnect the user if profile fetch fails
           await supabase.auth.signOut()
           setIsLoading(false)
@@ -233,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false)
       return { success: true }
     } catch (error: any) {
-      console.error('Exception lors de la connexion:', error)
+      console.error('Login error:', error.message)
       setIsLoading(false)
       return { success: false, error: error.message || 'Une erreur est survenue' }
     }
