@@ -30,13 +30,13 @@ export async function GET(req: Request) {
     }
 
     // Get user's organization
-    const { data: requestingUserProfile } = await supabaseAdmin
+    const { data: requestingUserProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('role, organization_id')
       .eq('id', user.id)
       .single()
 
-    if (!requestingUserProfile) {
+    if (profileError || !requestingUserProfile) {
       return NextResponse.json(
         { error: 'Profile not found' },
         { status: 404 }

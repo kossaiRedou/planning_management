@@ -39,14 +39,20 @@ export async function POST(req: Request) {
     }
 
     // Check if user is admin/owner of the organization
-    const { data: requestingUserProfile } = await supabaseAdmin
+    const { data: requestingUserProfile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .select('role, organization_id')
       .eq('id', user.id)
       .single()
 
-    if (!requestingUserProfile || 
-        requestingUserProfile.organization_id !== organizationId ||
+    if (profileError || !requestingUserProfile) {
+      return NextResponse.json(
+        { error: 'User profile not found' },
+        { status: 404 }
+      )
+    }
+
+    if (requestingUserProfile.organization_id !== organizationId ||
         !['owner', 'admin'].includes(requestingUserProfile.role)) {
       return NextResponse.json(
         { error: 'Forbidden: Only organization admins can create users' },
