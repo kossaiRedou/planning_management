@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth-context"
-import { getShiftDurationHours } from "@/lib/shift-utils"
+import { getShiftDurationHours, formatTimeNoSeconds, formatHoursDisplay } from "@/lib/shift-utils"
 import type { Site, Shift } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ import {
   parseISO,
 } from "date-fns"
 import { fr } from "date-fns/locale"
-import { ChevronLeft, ChevronRight, MapPin, Clock, Moon, ExternalLink } from "lucide-react"
+import { ChevronLeft, ChevronRight, MapPin, Clock, Moon, ExternalLink, Check } from "lucide-react"
 
 type ViewMode = "week" | "month"
 
@@ -182,63 +182,69 @@ export function AgentPlanning() {
         </Tabs>
       </div>
 
-      {/* Calendar Grid */}
+      {/* Calendar Grid - structure claire, couleurs par statut */}
       {viewMode === "week" ? (
         <div className="flex flex-col gap-2">
           {dateRange.map((day) => {
             const shifts = getShiftsForDay(day)
             const today = isToday(day)
+            const isRest = shifts.length === 0
+            const dayTotalHours = shifts.reduce((acc, s) => acc + getShiftDurationHours(s), 0)
 
             return (
               <Card
                 key={day.toISOString()}
-                className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-                  today ? "border-primary/50 bg-primary/5" : ""
-                } ${selectedDay && isSameDay(day, selectedDay) ? "ring-2 ring-primary" : ""}`}
+                className={`cursor-pointer transition-colors hover:opacity-95 ${
+                  !isRest ? "bg-[#F2F7FF]" : "bg-[#E8F8EC]"
+                } ${today ? "ring-2 ring-[#2C5BD3]" : ""} ${
+                  selectedDay && isSameDay(day, selectedDay) ? "ring-2 ring-[#2C5BD3]" : ""
+                }`}
                 onClick={() => setSelectedDay(day)}
               >
                 <CardContent className="flex items-center gap-4 p-3 sm:p-4">
-                  <div className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg ${
-                    today ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                  }`}>
-                    <span className="text-xs font-medium capitalize">
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-[#222222]/5">
+                    <span className="text-xs font-bold capitalize text-[#222222]">
                       {format(day, "EEE", { locale: fr })}
                     </span>
-                    <span className="text-lg font-bold leading-none">
+                    <span className="text-sm font-medium leading-none text-[#555555]">
                       {format(day, "d")}
                     </span>
                   </div>
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1">
                     {shifts.length > 0 ? (
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-2">
                         {shifts.map((shift) => {
                           const site = getSiteById(shift.siteId)
+                          const durationHours = getShiftDurationHours(shift)
                           return (
-                            <div key={shift.id} className="flex items-center gap-2">
-                              <div className={`h-2 w-2 rounded-full ${
-                                shift.isNight ? "bg-indigo-500" : "bg-blue-500"
-                              }`} />
-                              <span className="text-sm font-medium text-foreground">
-                                {shift.startTime} - {shift.endTime}
+                            <div key={shift.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                              <span className="text-sm font-bold text-[#222222]">
+                                {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
                               </span>
-                              <span className="hidden text-sm text-muted-foreground sm:inline">
+                              <span className="text-xs text-[#666666]">
                                 {site?.name}
                               </span>
-                              {shift.isNight && (
-                                <Moon className="h-3 w-3 text-indigo-600" />
-                              )}
+                              <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-[#E3F0FF] text-[#1A3A8A]">
+                                {formatHoursDisplay(durationHours)} h
+                              </span>
                             </div>
                           )
                         })}
                       </div>
                     ) : (
-                      <span className="text-sm text-muted-foreground">Repos</span>
+                      <div className="flex items-center gap-1.5">
+                        <Check className="h-4 w-4 shrink-0 text-[#1E6B3A]" />
+                        <span className="text-sm font-medium text-[#1E6B3A]">Repos</span>
+                      </div>
                     )}
                   </div>
                   {shifts.length > 0 && (
-                    <Badge variant="secondary" className="shrink-0">
-                      {shifts.reduce((acc, s) => acc + getShiftDurationHours(s), 0)}h
-                    </Badge>
+                    <span
+                      className="shrink-0 rounded px-2 py-1 text-sm font-semibold bg-[#E3F0FF] text-[#1A3A8A]"
+                      title={`Valeur exacte: ${dayTotalHours} h`}
+                    >
+                      {formatHoursDisplay(dayTotalHours)} h
+                    </span>
                   )}
                 </CardContent>
               </Card>
@@ -295,13 +301,13 @@ export function AgentPlanning() {
       {selectedDay && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base capitalize">
+            <CardTitle className="text-base capitalize text-[#222222]">
               {format(selectedDay, "EEEE d MMMM yyyy", { locale: fr })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {selectedDayShifts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune mission ce jour.</p>
+              <p className="text-sm text-[#555555]">Aucune mission ce jour.</p>
             ) : (
               <div className="flex flex-col gap-4">
                 {selectedDayShifts.map((shift) => {
@@ -310,32 +316,35 @@ export function AgentPlanning() {
                   return (
                     <div
                       key={shift.id}
-                      className="flex flex-col gap-3 rounded-lg border border-border p-4"
+                      className="flex flex-col gap-3 rounded-lg border border-border bg-[#F2F7FF]/50 p-4"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-semibold text-foreground">
-                            {shift.startTime} - {shift.endTime}
-                          </span>
-                          <Badge variant="secondary">{duration}h</Badge>
-                          {shift.isNight && (
-                            <Badge className="border border-indigo-200 bg-indigo-50 text-indigo-900 hover:bg-indigo-50">
-                              Nuit
-                            </Badge>
-                          )}
-                          {shift.isSunday && (
-                            <Badge className="bg-warning/10 text-warning hover:bg-warning/10">
-                              Dimanche
-                            </Badge>
-                          )}
-                        </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Clock className="h-4 w-4 text-[#555555]" />
+                        <span className="text-sm font-bold text-[#222222]">
+                          {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
+                        </span>
+                        <span
+                          className="rounded px-2 py-0.5 text-xs font-medium bg-[#E3F0FF] text-[#1A3A8A]"
+                          title={`Valeur exacte: ${duration} h`}
+                        >
+                          {formatHoursDisplay(duration)} h
+                        </span>
+                        {shift.isNight && (
+                          <Badge className="border border-[#B8D4F0] bg-[#E3F0FF] text-[#1A3A8A] hover:bg-[#E3F0FF]">
+                            Nuit
+                          </Badge>
+                        )}
+                        {shift.isSunday && (
+                          <Badge className="bg-warning/10 text-warning hover:bg-warning/10">
+                            Dimanche
+                          </Badge>
+                        )}
                       </div>
                       {site && (
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground">{site.name}</span>
+                            <MapPin className="h-4 w-4 text-[#555555]" />
+                            <span className="text-sm font-medium text-[#222222]">{site.name}</span>
                           </div>
                           <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`}
@@ -349,7 +358,7 @@ export function AgentPlanning() {
                         </div>
                       )}
                       {shift.notes && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-[#555555]">
                           Consignes : {shift.notes}
                         </p>
                       )}
