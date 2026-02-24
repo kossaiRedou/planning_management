@@ -34,6 +34,8 @@ import {
   eachDayOfInterval,
   isToday,
   parseISO,
+  startOfMonth,
+  endOfMonth,
 } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
@@ -43,7 +45,10 @@ import {
   AlertTriangle,
   Send,
   Check,
+  FileDown,
 } from "lucide-react"
+import { downloadPlanningPdf } from "@/components/admin/planning-pdf-document"
+import { buildPlanningPdfSection, buildPlanningPdfSectionsForMonth } from "@/lib/planning-pdf-utils"
 
 export function AdminPlanning() {
   const { user, organization } = useAuth()
@@ -64,6 +69,12 @@ export function AdminPlanning() {
   const [newShiftStart, setNewShiftStart] = useState("08:00")
   const [newShiftEnd, setNewShiftEnd] = useState("20:00")
   const [newShiftNotes, setNewShiftNotes] = useState("")
+
+  // Export PDF dialog
+  const [showExportPdfDialog, setShowExportPdfDialog] = useState(false)
+  const [pdfPeriod, setPdfPeriod] = useState<"week" | "month">("week")
+  const [pdfAgentId, setPdfAgentId] = useState<string>("")
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
@@ -261,6 +272,94 @@ export function AdminPlanning() {
     setTimeout(() => setPublished(false), 3000)
   }
 
+  async function handleExportPdf() {
+    if (!organization) return
+    setIsExportingPdf(true)
+    try {
+      const agentsToExport = pdfAgentId ? agents.filter((a) => a.id === pdfAgentId) : agents
+      const scopeLabel = pdfAgentId
+        ? `Agent : ${agents.find((a) => a.id === pdfAgentId)?.firstName} ${agents.find((a) => a.id === pdfAgentId)?.lastName}`
+        : "Tous les agents"
+
+      if (pdfPeriod === "week") {
+        const section = buildPlanningPdfSection(
+          agentsToExport,
+          weekDays,
+          shifts,
+          availabilities
+        )
+        const periodLabel = `Semaine du ${format(weekStart, "d MMM", { locale: fr })} au ${format(weekEnd, "d MMM yyyy", { locale: fr })}`
+        await downloadPlanningPdf(
+          {
+            periodLabel,
+            scopeLabel,
+            sections: [section],
+            sites,
+            formatTimeNoSeconds,
+            formatHoursDisplay,
+          },
+          `planning_semaine_${format(weekStart, "yyyy-MM-dd")}.pdf`
+        )
+      } else {
+        const monthStart = startOfMonth(currentDate)
+        const monthEnd = endOfMonth(currentDate)
+        const monthStartStr = format(monthStart, "yyyy-MM-dd")
+        const monthEndStr = format(monthEnd, "yyyy-MM-dd")
+        const { data: monthShiftsData } = await supabase
+          .from("shifts")
+          .select("*")
+          .eq("organization_id", organization.id)
+          .gte("date", monthStartStr)
+          .lte("date", monthEndStr)
+        const monthShifts = (monthShiftsData ?? []).map((s: any) => ({
+          id: s.id,
+          organization_id: s.organization_id,
+          agentId: s.agent_id,
+          siteId: s.site_id,
+          date: s.date,
+          startTime: s.start_time,
+          endTime: s.end_time,
+          notes: s.notes ?? undefined,
+          isNight: s.is_night,
+          isSunday: s.is_sunday,
+          status: s.status,
+        })) as Shift[]
+        const { data: monthAvailData } = await supabase
+          .from("availabilities")
+          .select("*")
+          .eq("organization_id", organization.id)
+          .gte("date", monthStartStr)
+          .lte("date", monthEndStr)
+        const monthAvail = (monthAvailData ?? []) as { agent_id: string; date: string; available: boolean }[]
+        const sections = buildPlanningPdfSectionsForMonth(
+          agentsToExport,
+          monthShifts,
+          monthAvail,
+          monthStart,
+          monthEnd,
+          1
+        )
+        const periodLabel = format(monthStart, "MMMM yyyy", { locale: fr })
+        await downloadPlanningPdf(
+          {
+            periodLabel,
+            scopeLabel,
+            sections,
+            sites,
+            formatTimeNoSeconds,
+            formatHoursDisplay,
+          },
+          `planning_mois_${format(monthStart, "yyyy-MM")}.pdf`
+        )
+      }
+      setShowExportPdfDialog(false)
+    } catch (e) {
+      console.error("Export PDF failed:", e)
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }
+
   // Count total hours per agent for this week
   const agentWeekHours = useMemo(() => {
     const map: Record<string, number> = {}
@@ -317,23 +416,29 @@ export function AdminPlanning() {
             Assignez les missions aux agents
           </p>
         </div>
-        <Button
-          onClick={handlePublish}
-          className="gap-2"
-          disabled={published}
-        >
-          {published ? (
-            <>
-              <Check className="h-4 w-4" />
-              Planning publie
-            </>
-          ) : (
-            <>
-              <Send className="h-4 w-4" />
-              Publier le planning
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setShowExportPdfDialog(true)}>
+            <FileDown className="h-4 w-4" />
+            Exporter en PDF
+          </Button>
+          <Button
+            onClick={handlePublish}
+            className="gap-2"
+            disabled={published}
+          >
+            {published ? (
+              <>
+                <Check className="h-4 w-4" />
+                Planning publie
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Publier le planning
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Week Navigation */}
@@ -536,6 +641,57 @@ export function AdminPlanning() {
           <span>Agent indisponible</span>
         </div>
       </div>
+
+      {/* Export PDF Dialog */}
+      <Dialog open={showExportPdfDialog} onOpenChange={setShowExportPdfDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Exporter le planning en PDF</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label>Periode</Label>
+              <Select value={pdfPeriod} onValueChange={(v) => setPdfPeriod(v as "week" | "month")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">
+                    Semaine (semaine affichee)
+                  </SelectItem>
+                  <SelectItem value="month">
+                    Mois ({format(currentDate, "MMMM yyyy", { locale: fr })})
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Perimetre</Label>
+              <Select value={pdfAgentId || "all"} onValueChange={(v) => setPdfAgentId(v === "all" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les agents</SelectItem>
+                  {agents.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.firstName} {a.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportPdfDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleExportPdf} disabled={isExportingPdf}>
+              {isExportingPdf ? "Generation…" : "Telecharger le PDF"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Shift Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
