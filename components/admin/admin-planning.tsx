@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth-context"
-import { getShiftDurationHours } from "@/lib/shift-utils"
+import { getShiftDurationHours, formatTimeNoSeconds, formatHoursDisplay } from "@/lib/shift-utils"
 import type { Shift, Site, User } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -355,10 +355,10 @@ export function AdminPlanning() {
         <CardContent className="p-0">
           <ScrollArea className="w-full">
             <div className="min-w-[800px]">
-              {/* Header row */}
+              {/* Header row - en-tête jours sur fond bleu */}
               <div className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-b border-border">
-                <div className="flex items-center border-r border-border px-4 py-3">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase">
+                <div className="flex items-center border-r border-border bg-[#FAFAFA] px-4 py-3">
+                  <span className="text-xs font-semibold uppercase text-[#222222]">
                     Agent
                   </span>
                 </div>
@@ -368,38 +368,43 @@ export function AdminPlanning() {
                     <div
                       key={day.toISOString()}
                       className={`flex flex-col items-center border-r border-border px-2 py-3 ${
-                        today ? "bg-primary/5" : ""
+                        today ? "bg-[#2563eb]" : "bg-[#2C5BD3]"
                       }`}
                     >
-                      <span className="text-xs font-medium text-muted-foreground capitalize">
+                      <span className="text-xs font-medium capitalize text-white/90">
                         {format(day, "EEE", { locale: fr })}
                       </span>
-                      <span className={`text-sm font-bold ${today ? "text-primary" : "text-foreground"}`}>
+                      <span className="text-sm font-bold text-white">
                         {format(day, "d MMM", { locale: fr })}
                       </span>
                     </div>
                   )
                 })}
-                <div className="flex items-center justify-center bg-primary/10 px-4 py-3">
-                  <span className="text-xs font-semibold text-primary uppercase">
+                <div className="flex items-center justify-center bg-[#EDEDED] px-4 py-3">
+                  <span className="text-xs font-semibold uppercase text-[#222222]">
                     Total
                   </span>
                 </div>
               </div>
 
-              {/* Agent rows */}
-              {agents.map((agent) => (
+              {/* Agent rows - zébrage blanc / gris très clair */}
+              {agents.map((agent, agentIndex) => (
                 <div
                   key={agent.id}
-                  className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-b border-border last:border-b-0"
+                  className={`grid grid-cols-[200px_repeat(7,1fr)_120px] border-b border-border last:border-b-0 ${
+                    agentIndex % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
+                  }`}
                 >
                   <div className="flex items-center gap-2 border-r border-border px-4 py-3">
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-foreground">
+                      <span className="text-sm font-medium text-[#222222]">
                         {agent.firstName} {agent.lastName}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {agentWeekHours[agent.id] || 0}h / semaine
+                      <span
+                        className="text-xs text-[#555555]"
+                        title={`Valeur exacte: ${agentWeekHours[agent.id] ?? 0} h`}
+                      >
+                        {formatHoursDisplay(agentWeekHours[agent.id] || 0)} h / semaine
                       </span>
                     </div>
                   </div>
@@ -413,8 +418,8 @@ export function AdminPlanning() {
                       <div
                         key={dateStr}
                         className={`group relative flex min-h-[72px] flex-col gap-1 border-r border-border p-1.5 ${
-                          today ? "bg-primary/5" : ""
-                        } ${unavailable ? "bg-destructive/5" : ""}`}
+                          today ? "bg-[#F2F7FF]" : ""
+                        } ${unavailable ? "bg-[#FFE5E5]" : ""}`}
                       >
                         {unavailable && (
                           <div className="absolute right-1 top-1">
@@ -423,23 +428,29 @@ export function AdminPlanning() {
                         )}
                         {cellShifts.map((shift) => {
                           const site = sites.find((s) => s.id === shift.siteId)
+                          const durationHours = getShiftDurationHours(shift)
                           return (
                             <button
                               key={shift.id}
                               type="button"
                               onClick={() => removeShift(shift.id)}
-                              className={`rounded border px-1.5 py-0.5 text-left text-xs transition-colors hover:opacity-80 ${
+                              className={`rounded border px-1.5 py-1 text-left text-xs transition-colors hover:opacity-90 ${
                                 shift.isNight
-                                  ? "border-indigo-200 bg-indigo-50 text-indigo-900"
-                                  : "border-blue-200 bg-blue-50 text-blue-900"
+                                  ? "border-[#B8D4F0] bg-[#E3F0FF] text-[#222222]"
+                                  : "border-[#E8E0B8] bg-[#FFF8D6] text-[#222222]"
                               }`}
-                              title={`Cliquer pour supprimer - ${site?.name}`}
+                              title={`Cliquer pour supprimer - ${site?.name} (${durationHours} h)`}
                             >
-                              <div className="font-medium">
-                                {shift.startTime}-{shift.endTime}
+                              <div className="font-bold leading-tight text-[#222222]">
+                                {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
                               </div>
-                              <div className="truncate opacity-70">
+                              <div className="truncate text-[11px] text-[#555555]">
                                 {site?.name}
+                              </div>
+                              <div className="mt-0.5 flex justify-end">
+                                <span className="rounded px-1 py-0.5 text-[10px] font-medium bg-[#E0ECFF] text-[#1A3A8A]">
+                                  {formatHoursDisplay(durationHours)} h
+                                </span>
                               </div>
                             </button>
                           )
@@ -454,19 +465,22 @@ export function AdminPlanning() {
                       </div>
                     )
                   })}
-                  {/* Total column for this agent */}
-                  <div className="flex items-center justify-center bg-primary/5 px-4 py-3">
-                    <span className="text-base font-bold text-primary">
-                      {agentWeekHours[agent.id] || 0}h
+                  {/* Total column for this agent - fond distinct */}
+                  <div className="flex items-center justify-center bg-[#EDEDED] px-4 py-3">
+                    <span
+                      className="text-base font-semibold text-[#222222]"
+                      title={`Valeur exacte: ${agentWeekHours[agent.id] ?? 0} h`}
+                    >
+                      {formatHoursDisplay(agentWeekHours[agent.id] || 0)} h
                     </span>
                   </div>
                 </div>
               ))}
 
-              {/* Totals row (by day) */}
-              <div className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-t-2 border-primary/20 bg-primary/5">
+              {/* Totals row (by day) - accent sur les totaux */}
+              <div className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-t-2 border-[#E5E5E5] bg-[#FAFAFA]">
                 <div className="flex items-center border-r border-border px-4 py-3">
-                  <span className="text-sm font-bold text-primary uppercase">
+                  <span className="text-sm font-semibold uppercase text-[#222222]">
                     Total par jour
                   </span>
                 </div>
@@ -479,19 +493,25 @@ export function AdminPlanning() {
                     <div
                       key={dateStr}
                       className={`flex items-center justify-center border-r border-border px-2 py-3 ${
-                        today ? "bg-primary/10" : ""
+                        today ? "bg-[#E0ECFF]" : ""
                       }`}
                     >
-                      <span className="text-base font-bold text-primary">
-                        {totalHours}h
+                      <span
+                        className="text-base font-semibold text-[#222222]"
+                        title={`Valeur exacte: ${totalHours} h`}
+                      >
+                        {formatHoursDisplay(totalHours)} h
                       </span>
                     </div>
                   )
                 })}
                 {/* Grand total */}
-                <div className="flex items-center justify-center bg-primary/10 px-4 py-3">
-                  <span className="text-lg font-extrabold text-primary">
-                    {grandTotal}h
+                <div className="flex items-center justify-center bg-[#EDEDED] px-4 py-3">
+                  <span
+                    className="text-lg font-bold text-[#222222]"
+                    title={`Valeur exacte: ${grandTotal} h`}
+                  >
+                    {formatHoursDisplay(grandTotal)} h
                   </span>
                 </div>
               </div>
@@ -501,18 +521,18 @@ export function AdminPlanning() {
         </CardContent>
       </Card>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+      {/* Legend - code couleur par type */}
+      <div className="flex flex-wrap gap-4 text-xs text-[#555555]">
         <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-blue-200 bg-blue-50" />
+          <div className="h-3 w-3 rounded border border-[#E8E0B8] bg-[#FFF8D6]" />
           <span>Mission de jour</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-indigo-200 bg-indigo-50" />
+          <div className="h-3 w-3 rounded border border-[#B8D4F0] bg-[#E3F0FF]" />
           <span>Mission de nuit</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <AlertTriangle className="h-3 w-3 text-destructive" />
+          <div className="h-3 w-3 rounded border border-red-200 bg-[#FFE5E5]" />
           <span>Agent indisponible</span>
         </div>
       </div>
