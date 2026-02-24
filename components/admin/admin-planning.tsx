@@ -34,8 +34,6 @@ import {
   eachDayOfInterval,
   isToday,
   parseISO,
-  startOfMonth,
-  endOfMonth,
 } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
@@ -48,7 +46,7 @@ import {
   FileDown,
 } from "lucide-react"
 import { downloadPlanningPdf } from "@/components/admin/planning-pdf-document"
-import { buildPlanningPdfSection, buildPlanningPdfSectionsForMonth } from "@/lib/planning-pdf-utils"
+import { buildPlanningPdfSection } from "@/lib/planning-pdf-utils"
 
 export function AdminPlanning() {
   const { user, organization } = useAuth()
@@ -72,7 +70,6 @@ export function AdminPlanning() {
 
   // Export PDF dialog
   const [showExportPdfDialog, setShowExportPdfDialog] = useState(false)
-  const [pdfPeriod, setPdfPeriod] = useState<"week" | "month">("week")
   const [pdfAgentId, setPdfAgentId] = useState<string>("")
   const [isExportingPdf, setIsExportingPdf] = useState(false)
 
@@ -280,78 +277,24 @@ export function AdminPlanning() {
       const scopeLabel = pdfAgentId
         ? `Agent : ${agents.find((a) => a.id === pdfAgentId)?.firstName} ${agents.find((a) => a.id === pdfAgentId)?.lastName}`
         : "Tous les agents"
-
-      if (pdfPeriod === "week") {
-        const section = buildPlanningPdfSection(
-          agentsToExport,
-          weekDays,
-          shifts,
-          availabilities
-        )
-        const periodLabel = `Semaine du ${format(weekStart, "d MMM", { locale: fr })} au ${format(weekEnd, "d MMM yyyy", { locale: fr })}`
-        await downloadPlanningPdf(
-          {
-            periodLabel,
-            scopeLabel,
-            sections: [section],
-            sites,
-            formatTimeNoSeconds,
-            formatHoursDisplay,
-          },
-          `planning_semaine_${format(weekStart, "yyyy-MM-dd")}.pdf`
-        )
-      } else {
-        const monthStart = startOfMonth(currentDate)
-        const monthEnd = endOfMonth(currentDate)
-        const monthStartStr = format(monthStart, "yyyy-MM-dd")
-        const monthEndStr = format(monthEnd, "yyyy-MM-dd")
-        const { data: monthShiftsData } = await supabase
-          .from("shifts")
-          .select("*")
-          .eq("organization_id", organization.id)
-          .gte("date", monthStartStr)
-          .lte("date", monthEndStr)
-        const monthShifts = (monthShiftsData ?? []).map((s: any) => ({
-          id: s.id,
-          organization_id: s.organization_id,
-          agentId: s.agent_id,
-          siteId: s.site_id,
-          date: s.date,
-          startTime: s.start_time,
-          endTime: s.end_time,
-          notes: s.notes ?? undefined,
-          isNight: s.is_night,
-          isSunday: s.is_sunday,
-          status: s.status,
-        })) as Shift[]
-        const { data: monthAvailData } = await supabase
-          .from("availabilities")
-          .select("*")
-          .eq("organization_id", organization.id)
-          .gte("date", monthStartStr)
-          .lte("date", monthEndStr)
-        const monthAvail = (monthAvailData ?? []) as { agent_id: string; date: string; available: boolean }[]
-        const sections = buildPlanningPdfSectionsForMonth(
-          agentsToExport,
-          monthShifts,
-          monthAvail,
-          monthStart,
-          monthEnd,
-          1
-        )
-        const periodLabel = format(monthStart, "MMMM yyyy", { locale: fr })
-        await downloadPlanningPdf(
-          {
-            periodLabel,
-            scopeLabel,
-            sections,
-            sites,
-            formatTimeNoSeconds,
-            formatHoursDisplay,
-          },
-          `planning_mois_${format(monthStart, "yyyy-MM")}.pdf`
-        )
-      }
+      const section = buildPlanningPdfSection(
+        agentsToExport,
+        weekDays,
+        shifts,
+        availabilities
+      )
+      const periodLabel = `Semaine du ${format(weekStart, "d MMM", { locale: fr })} au ${format(weekEnd, "d MMM yyyy", { locale: fr })}`
+      await downloadPlanningPdf(
+        {
+          periodLabel,
+          scopeLabel,
+          sections: [section],
+          sites,
+          formatTimeNoSeconds,
+          formatHoursDisplay,
+        },
+        `planning_semaine_${format(weekStart, "yyyy-MM-dd")}.pdf`
+      )
       setShowExportPdfDialog(false)
     } catch (e) {
       console.error("Export PDF failed:", e)
@@ -649,22 +592,6 @@ export function AdminPlanning() {
             <DialogTitle>Exporter le planning en PDF</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label>Periode</Label>
-              <Select value={pdfPeriod} onValueChange={(v) => setPdfPeriod(v as "week")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">
-                    Semaine (semaine affichee)
-                  </SelectItem>
-                  <SelectItem value="month">
-                    Mois ({format(currentDate, "MMMM yyyy", { locale: fr })})
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="flex flex-col gap-2">
               <Label>Perimetre</Label>
               <Select value={pdfAgentId || "all"} onValueChange={(v) => setPdfAgentId(v === "all" ? "" : v)}>
