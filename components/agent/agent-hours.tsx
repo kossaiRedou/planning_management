@@ -3,12 +3,11 @@
 import { useState, useMemo, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/lib/auth-context"
-import { getShiftDurationHours } from "@/lib/shift-utils"
+import { getShiftDurationHours, formatTimeNoSeconds, formatHoursDisplay } from "@/lib/shift-utils"
 import type { Site, Shift } from "@/lib/types"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
   Table,
   TableBody,
@@ -17,18 +16,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, subMonths, addMonths } from "date-fns"
+import { format, parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, addMonths, subMonths } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Clock, Sun, Moon, ChevronLeft, ChevronRight, Download } from "lucide-react"
+import { ChevronLeft, ChevronRight, Download } from "lucide-react"
+
+type PeriodType = "month" | "week"
 
 export function AgentHours() {
   const { user } = useAuth()
   const supabase = createClient()
   
-  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [period, setPeriod] = useState<PeriodType>("month")
+  const [currentDate, setCurrentDate] = useState(new Date())
   const [myShifts, setMyShifts] = useState<Shift[]>([])
   const [sites, setSites] = useState<Site[]>([])
   const [isLoading, setIsLoading] = useState(true)
+
+  const rangeStart = period === "month" ? startOfMonth(currentDate) : startOfWeek(currentDate, { weekStartsOn: 1 })
+  const rangeEnd = period === "month" ? endOfMonth(currentDate) : endOfWeek(currentDate, { weekStartsOn: 1 })
 
   // Load shifts from Supabase
   useEffect(() => {
@@ -41,8 +46,8 @@ export function AgentHours() {
       
       setIsLoading(true)
       try {
-        const start = startOfMonth(currentMonth)
-        const end = endOfMonth(currentMonth)
+        const start = rangeStart
+        const end = rangeEnd
 
         // Load shifts
         const { data: shiftsData } = await supabase
@@ -94,7 +99,7 @@ export function AgentHours() {
     }
 
     loadShifts()
-  }, [user, currentMonth, supabase])
+  }, [user, rangeStart, rangeEnd, supabase])
 
   const stats = useMemo(() => {
     let totalHours = 0
@@ -129,7 +134,7 @@ export function AgentHours() {
         site?.name || "",
         shift.startTime,
         shift.endTime,
-        duration.toString(),
+        formatHoursDisplay(duration),
         type,
       ]
     })
@@ -138,9 +143,19 @@ export function AgentHours() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `heures_${format(currentMonth, "yyyy-MM")}.csv`
+    a.download = period === "month"
+      ? `heures_${format(rangeStart, "yyyy-MM")}.csv`
+      : `heures_${format(rangeStart, "yyyy-MM-dd")}_semaine.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  function navigatePeriod(delta: number) {
+    if (period === "month") {
+      setCurrentDate((d) => (delta > 0 ? addMonths(d, 1) : subMonths(d, 1)))
+    } else {
+      setCurrentDate((d) => addWeeks(d, delta))
+    }
   }
 
   if (isLoading) {
@@ -151,87 +166,92 @@ export function AgentHours() {
     )
   }
 
+  const periodLabel = period === "month"
+    ? format(rangeStart, "MMMM yyyy", { locale: fr })
+    : `Sem. du ${format(rangeStart, "d MMM", { locale: fr })}`
+
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Compteur d{"'"}Heures</h1>
-        <p className="text-sm text-muted-foreground">
-          Suivi detaille de vos heures travaillees
-        </p>
+    <div className="flex flex-col gap-4">
+      <h1 className="text-lg font-semibold text-[#222222]">Heures</h1>
+
+      {/* Filtre Mois / Semaine + Navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-0.5">
+          <button
+            type="button"
+            onClick={() => setPeriod("week")}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              period === "week" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Semaine
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriod("month")}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              period === "month" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Mois
+          </button>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(-1)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="min-w-[140px] text-center text-sm font-medium capitalize text-[#222222]">
+            {periodLabel}
+          </span>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(1)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Month Navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="outline" size="icon" onClick={() => setCurrentMonth((d) => subMonths(d, 1))}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="text-sm font-semibold text-foreground capitalize">
-          {format(currentMonth, "MMMM yyyy", { locale: fr })}
-        </span>
-        <Button variant="outline" size="icon" onClick={() => setCurrentMonth((d) => addMonths(d, 1))}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+      {/* Totaux - 2 décimales, très simple */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-lg border border-border bg-white px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-[#555555]">Total</p>
+          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.totalHours)} h</p>
+        </div>
+        <div className="rounded-lg border border-border bg-white px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-[#555555]">Jour</p>
+          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.dayHours)} h</p>
+        </div>
+        <div className="rounded-lg border border-border bg-white px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-[#555555]">Nuit</p>
+          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.nightHours)} h</p>
+        </div>
+        <div className="rounded-lg border border-border bg-white px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-[#555555]">Missions</p>
+          <p className="text-lg font-semibold text-[#222222]">{stats.shiftCount}</p>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 p-4">
-            <Clock className="h-5 w-5 text-primary" />
-            <span className="text-2xl font-bold text-foreground">{stats.totalHours}</span>
-            <span className="text-xs text-muted-foreground">Heures totales</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 p-4">
-            <Sun className="h-5 w-5 text-warning" />
-            <span className="text-2xl font-bold text-foreground">{stats.dayHours}</span>
-            <span className="text-xs text-muted-foreground">Heures de jour</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 p-4">
-            <Moon className="h-5 w-5 text-indigo-500" />
-            <span className="text-2xl font-bold text-foreground">{stats.nightHours}</span>
-            <span className="text-xs text-muted-foreground">Heures de nuit</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 p-4">
-            <span className="text-lg font-bold text-primary">{stats.shiftCount}</span>
-            <span className="text-xs text-muted-foreground">Missions</span>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Export */}
-      <div className="flex justify-end">
-        <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2 bg-transparent">
-          <Download className="h-4 w-4" />
-          Exporter CSV
-        </Button>
-      </div>
-
-      {/* Shifts Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Detail des missions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {myShifts.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Aucune mission ce mois-ci.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
+      {/* Export + Table */}
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={exportCSV} className="gap-1.5 text-[#555555]">
+            <Download className="h-3.5 w-3.5" />
+            CSV
+          </Button>
+        </div>
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            {myShifts.length === 0 ? (
+              <p className="py-10 text-center text-sm text-[#555555]">
+                {period === "month" ? "Aucune mission ce mois-ci." : "Aucune mission cette semaine."}
+              </p>
+            ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Horaires</TableHead>
-                    <TableHead className="hidden sm:table-cell">Site</TableHead>
-                    <TableHead>Duree</TableHead>
-                    <TableHead>Type</TableHead>
+                  <TableRow className="border-b border-border hover:bg-transparent">
+                    <TableHead className="text-xs font-medium text-[#555555]">Date</TableHead>
+                    <TableHead className="text-xs font-medium text-[#555555]">Horaires</TableHead>
+                    <TableHead className="hidden text-xs font-medium text-[#555555] sm:table-cell">Site</TableHead>
+                    <TableHead className="text-xs font-medium text-[#555555]">Duree</TableHead>
+                    <TableHead className="text-xs font-medium text-[#555555]">Type</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -239,24 +259,26 @@ export function AgentHours() {
                     const site = sites.find((s) => s.id === shift.siteId)
                     const duration = getShiftDurationHours(shift)
                     return (
-                      <TableRow key={shift.id}>
-                        <TableCell className="text-sm font-medium capitalize">
+                      <TableRow key={shift.id} className="border-b border-border/50">
+                        <TableCell className="text-sm text-[#222222]">
                           {format(parseISO(shift.date), "EEE d MMM", { locale: fr })}
                         </TableCell>
-                        <TableCell className="text-sm">
-                          {shift.startTime} - {shift.endTime}
+                        <TableCell className="text-sm font-medium text-[#222222]">
+                          {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
                         </TableCell>
-                        <TableCell className="hidden text-sm sm:table-cell">
+                        <TableCell className="hidden text-sm text-[#555555] sm:table-cell">
                           {site?.name}
                         </TableCell>
-                        <TableCell className="text-sm font-medium">{duration}h</TableCell>
+                        <TableCell className="text-sm font-medium text-[#222222]">
+                          {formatHoursDisplay(duration)} h
+                        </TableCell>
                         <TableCell>
                           {shift.isNight ? (
-                            <Badge className="border border-indigo-200 bg-indigo-50 text-indigo-900 hover:bg-indigo-50">Nuit</Badge>
+                            <Badge className="border border-[#B8D4F0] bg-[#E3F0FF] text-[#1A3A8A] hover:bg-[#E3F0FF]">Nuit</Badge>
                           ) : shift.isSunday ? (
                             <Badge className="bg-warning/10 text-warning hover:bg-warning/10">Dim.</Badge>
                           ) : (
-                            <Badge className="border border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-50">Jour</Badge>
+                            <Badge className="border border-[#E8E0B8] bg-[#FFF8D6] text-[#222222] hover:bg-[#FFF8D6]">Jour</Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -264,10 +286,10 @@ export function AgentHours() {
                   })}
                 </TableBody>
               </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

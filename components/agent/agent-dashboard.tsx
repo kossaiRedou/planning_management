@@ -10,7 +10,7 @@ import { CalendarDays, Clock, CalendarCheck } from "lucide-react"
 const navItems = [
   { label: "Planning", id: "planning", icon: <CalendarDays className="h-4 w-4" /> },
   { label: "Heures", id: "hours", icon: <Clock className="h-4 w-4" /> },
-  { label: "Disponibilites", id: "availability", icon: <CalendarCheck className="h-4 w-4" /> },
+  { label: "Dispos", id: "availability", icon: <CalendarCheck className="h-4 w-4" /> },
 ]
 
 export function AgentDashboard() {
@@ -18,7 +18,7 @@ export function AgentDashboard() {
 
   return (
     <AppShell navItems={navItems} activeTab={activeTab} onTabChange={setActiveTab}>
-      <div className="mx-auto max-w-4xl pb-20 md:pb-0">
+      <div className="mx-auto w-full max-w-3xl px-3 py-4 pb-20 md:pb-6">
         {activeTab === "planning" && <AgentPlanning />}
         {activeTab === "hours" && <AgentHours />}
         {activeTab === "availability" && <AgentAvailability />}
