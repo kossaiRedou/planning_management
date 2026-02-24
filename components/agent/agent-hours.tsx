@@ -252,11 +252,11 @@ export function AgentHours() {
                         <TableCell className="text-sm font-medium">{duration}h</TableCell>
                         <TableCell>
                           {shift.isNight ? (
-                            <Badge className="bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/10">Nuit</Badge>
+                            <Badge className="border border-indigo-200 bg-indigo-50 text-indigo-900 hover:bg-indigo-50">Nuit</Badge>
                           ) : shift.isSunday ? (
                             <Badge className="bg-warning/10 text-warning hover:bg-warning/10">Dim.</Badge>
                           ) : (
-                            <Badge variant="secondary">Jour</Badge>
+                            <Badge className="border border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-50">Jour</Badge>
                           )}
                         </TableCell>
                       </TableRow>

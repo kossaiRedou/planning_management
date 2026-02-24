@@ -216,7 +216,7 @@ export function AgentPlanning() {
                           return (
                             <div key={shift.id} className="flex items-center gap-2">
                               <div className={`h-2 w-2 rounded-full ${
-                                shift.isNight ? "bg-indigo-500" : "bg-accent"
+                                shift.isNight ? "bg-indigo-500" : "bg-blue-500"
                               }`} />
                               <span className="text-sm font-medium text-foreground">
                                 {shift.startTime} - {shift.endTime}
@@ -225,7 +225,7 @@ export function AgentPlanning() {
                                 {site?.name}
                               </span>
                               {shift.isNight && (
-                                <Moon className="h-3 w-3 text-indigo-500" />
+                                <Moon className="h-3 w-3 text-indigo-600" />
                               )}
                             </div>
                           )
@@ -279,7 +279,7 @@ export function AgentPlanning() {
                       <div
                         key={s.id}
                         className={`h-1.5 w-1.5 rounded-full ${
-                          s.isNight ? "bg-indigo-500" : "bg-accent"
+                          s.isNight ? "bg-indigo-500" : "bg-blue-500"
                         }`}
                       />
                     ))}
@@ -320,7 +320,7 @@ export function AgentPlanning() {
                           </span>
                           <Badge variant="secondary">{duration}h</Badge>
                           {shift.isNight && (
-                            <Badge className="bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/10">
+                            <Badge className="border border-indigo-200 bg-indigo-50 text-indigo-900 hover:bg-indigo-50">
                               Nuit
                             </Badge>
                           )}

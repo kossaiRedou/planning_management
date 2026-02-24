@@ -428,10 +428,10 @@ export function AdminPlanning() {
                               key={shift.id}
                               type="button"
                               onClick={() => removeShift(shift.id)}
-                              className={`rounded px-1.5 py-0.5 text-left text-xs transition-colors hover:opacity-80 ${
+                              className={`rounded border px-1.5 py-0.5 text-left text-xs transition-colors hover:opacity-80 ${
                                 shift.isNight
-                                  ? "bg-indigo-500/15 text-indigo-700"
-                                  : "bg-accent/15 text-accent-foreground"
+                                  ? "border-indigo-200 bg-indigo-50 text-indigo-900"
+                                  : "border-blue-200 bg-blue-50 text-blue-900"
                               }`}
                               title={`Cliquer pour supprimer - ${site?.name}`}
                             >
@@ -504,11 +504,11 @@ export function AdminPlanning() {
       {/* Legend */}
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded bg-accent/15" />
+          <div className="h-3 w-3 rounded border border-blue-200 bg-blue-50" />
           <span>Mission de jour</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded bg-indigo-500/15" />
+          <div className="h-3 w-3 rounded border border-indigo-200 bg-indigo-50" />
           <span>Mission de nuit</span>
         </div>
         <div className="flex items-center gap-1.5">
