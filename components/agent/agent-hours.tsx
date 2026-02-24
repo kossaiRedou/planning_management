@@ -34,8 +34,10 @@ export function AgentHours() {
 
   const rangeStart = period === "month" ? startOfMonth(currentDate) : startOfWeek(currentDate, { weekStartsOn: 1 })
   const rangeEnd = period === "month" ? endOfMonth(currentDate) : endOfWeek(currentDate, { weekStartsOn: 1 })
+  const rangeStartStr = format(rangeStart, "yyyy-MM-dd")
+  const rangeEndStr = format(rangeEnd, "yyyy-MM-dd")
 
-  // Load shifts from Supabase
+  // Load shifts from Supabase (deps stables pour éviter la boucle de re-renders)
   useEffect(() => {
     if (!user) return
 
@@ -46,16 +48,13 @@ export function AgentHours() {
       
       setIsLoading(true)
       try {
-        const start = rangeStart
-        const end = rangeEnd
-
         // Load shifts
         const { data: shiftsData } = await supabase
           .from('shifts')
           .select('*')
           .eq('agent_id', userId)
-          .gte('date', format(start, 'yyyy-MM-dd'))
-          .lte('date', format(end, 'yyyy-MM-dd'))
+          .gte('date', rangeStartStr)
+          .lte('date', rangeEndStr)
           .order('date', { ascending: true })
 
         if (shiftsData) {
@@ -99,7 +98,7 @@ export function AgentHours() {
     }
 
     loadShifts()
-  }, [user, rangeStart, rangeEnd, supabase])
+  }, [user, rangeStartStr, rangeEndStr, supabase])
 
   const stats = useMemo(() => {
     let totalHours = 0
