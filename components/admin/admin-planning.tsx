@@ -651,7 +651,7 @@ export function AdminPlanning() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label>Periode</Label>
-              <Select value={pdfPeriod} onValueChange={(v) => setPdfPeriod(v as "week" | "month")}>
+              <Select value={pdfPeriod} onValueChange={(v) => setPdfPeriod(v as "week")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
