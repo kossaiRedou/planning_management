@@ -1,8 +1,8 @@
 "use client"
 
 import React, { Suspense } from "react"
-
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 
 function WelcomeAlert() {
@@ -45,7 +45,7 @@ function LoginForm() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      router.push('/')
+      router.push("/dashboard")
     }
   }, [user, router])
 
@@ -58,20 +58,24 @@ function LoginForm() {
     if (!result.success) {
       setError(result.error || "Identifiants incorrects. Veuillez reessayer.")
     } else {
-      router.push('/')
+      router.push("/dashboard")
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="login-page-wrap flex min-h-screen flex-col items-center justify-center px-4">
+      <Link href="/" className="absolute left-4 top-4 flex items-center gap-2 text-sm text-[var(--ink-soft)] hover:text-[var(--accent)]">
+        <ArrowLeft className="h-4 w-4" />
+        Retour à l&apos;accueil
+      </Link>
       <div className="flex w-full max-w-md flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-3">
           <Image src="/logowithoutBG.png" alt="ShiftMe" width={56} height={56} className="rounded-2xl" />
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="login-title text-2xl tracking-tight">
             ShiftMe
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Gestion des plannings de securite
+          <p className="login-sub text-sm">
+            Planifiez vos équipes, simplement.
           </p>
         </div>
 
@@ -121,7 +125,7 @@ function LoginForm() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-[var(--ink)] hover:bg-[var(--accent)]" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -133,14 +137,11 @@ function LoginForm() {
               </Button>
             </form>
 
-            <div className="mt-4 text-center text-sm text-muted-foreground">
-              Vous n'avez pas encore de compte ?{' '}
-              <a
-                href="/signup"
-                className="text-primary font-medium hover:underline"
-              >
+            <div className="mt-4 text-center text-sm text-[var(--ink-soft)]">
+              Vous n&apos;avez pas encore de compte ?{' '}
+              <Link href="/signup" className="text-accent font-medium hover:underline" style={{ color: 'var(--accent)' }}>
                 Créer un compte
-              </a>
+              </Link>
             </div>
 
             

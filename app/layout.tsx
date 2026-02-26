@@ -1,10 +1,14 @@
 import React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Playfair_Display, DM_Sans } from "next/font/google"
 
+import { AuthProvider } from "@/lib/auth-context"
 import "./globals.css"
+import "./landing.css"
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" })
+const dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600"], variable: "--font-dm-sans" })
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.shiftme.sbs"
 
@@ -46,8 +50,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr">
-      <body className="font-sans antialiased">{children}</body>
+    <html lang="fr" className={`${playfair.variable} ${dmSans.variable}`}>
+      <body className="font-sans antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   )
 }
