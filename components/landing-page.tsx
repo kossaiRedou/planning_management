@@ -1,11 +1,19 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { ChevronUp } from "lucide-react"
 
 export function LandingPage() {
   const revealRef = useRef<HTMLDivElement>(null)
+  const [showBackToTop, setShowBackToTop] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   useEffect(() => {
     const el = revealRef.current
@@ -30,7 +38,7 @@ export function LandingPage() {
     <div className="landing" ref={revealRef}>
       <nav>
         <Link href="/" className="nav-logo">
-          <Image src="/logowithoutBG.png" alt="ShiftMe" width={32} height={32} className="rounded" />
+          <Image src="/logowithoutBG.png" alt="ShiftMe" width={40} height={40} className="rounded object-contain" priority />
           Shift<span>Me</span>
         </Link>
         <ul>
@@ -42,6 +50,9 @@ export function LandingPage() {
       </nav>
 
       <section className="hero" id="top">
+        <div className="hero-logo">
+          <Image src="/logowithoutBG.png" alt="ShiftMe" width={80} height={80} className="rounded-2xl object-contain" priority />
+        </div>
         <div className="hero-tag">Gestion de plannings & suivi d&apos;heures</div>
         <h1>Planifiez vos équipes,<br /><em>simplement.</em></h1>
         <p className="hero-sub">ShiftMe centralise vos plannings, vos agents et vos heures travaillées dans un seul outil clair — pensé pour les responsables d&apos;équipes terrain.</p>
@@ -293,6 +304,18 @@ export function LandingPage() {
         </nav>
         <p>© {new Date().getFullYear()} ShiftMe. Tous droits réservés.</p>
       </footer>
+
+      {showBackToTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="landing-back-to-top"
+          aria-label="Remonter en haut de la page"
+        >
+          <ChevronUp className="h-5 w-5" />
+          <span>Haut de page</span>
+        </button>
+      )}
     </div>
   )
 }
