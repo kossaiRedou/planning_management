@@ -80,7 +80,7 @@ export function AppShell({ children, navItems, activeTab, onTabChange }: AppShel
           <div className="flex items-center gap-3">
             {/* Right: Powered by ShiftMe (desktop only) */}
             <div className="hidden items-center gap-1.5 md:flex">
-              <Image src="/placeholder-logo.png" alt="ShiftMe" width={16} height={16} className="rounded opacity-60" />
+              <Image src="/logowithoutBG.png" alt="ShiftMe" width={16} height={16} className="opacity-60" />
               <span className="text-xs text-muted-foreground">Powered by ShiftMe</span>
             </div>
 

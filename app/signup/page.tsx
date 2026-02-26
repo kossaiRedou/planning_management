@@ -132,7 +132,7 @@ function SignupForm() {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <Image src="/placeholder-logo.png" alt="ShiftMe" width={56} height={56} className="rounded-2xl" />
+          <Image src="/logowithoutBG.png" alt="ShiftMe" width={56} height={56} className="rounded-2xl" />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Créer votre compte
           </h1>

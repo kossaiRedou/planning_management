@@ -66,7 +66,7 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="flex w-full max-w-md flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-3">
-          <Image src="/placeholder-logo.png" alt="ShiftMe" width={56} height={56} className="rounded-2xl" />
+          <Image src="/logowithoutBG.png" alt="ShiftMe" width={56} height={56} className="rounded-2xl" />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             ShiftMe
           </h1>
