@@ -143,24 +143,7 @@ function LoginForm() {
               </a>
             </div>
 
-            <div className="mt-6 rounded-lg border border-border bg-muted/50 p-3">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
-                Comptes de demonstration :
-              </p>
-              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                <p>
-                  <span className="font-medium text-foreground">Admin :</span>{" "}
-                  admin@votreentreprise.fr
-                </p>
-                <p>
-                  <span className="font-medium text-foreground">Agent :</span>{" "}
-                  jean.martin@votreentreprise.fr
-                </p>
-                <p className="mt-1 italic">
-                  Mot de passe : nimporte lequel
-                </p>
-              </div>
-            </div>
+            
           </CardContent>
         </Card>
       </div>
