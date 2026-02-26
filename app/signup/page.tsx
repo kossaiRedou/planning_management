@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield, ArrowLeft, ArrowRight, Loader2, Check, AlertCircle } from "lucide-react"
+import { ArrowLeft, ArrowRight, Loader2, Check, AlertCircle } from "lucide-react"
+import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -131,9 +132,7 @@ function SignupForm() {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Shield className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <Image src="/placeholder-logo.png" alt="ShiftMe" width={56} height={56} className="rounded-2xl" />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Créer votre compte
           </h1>

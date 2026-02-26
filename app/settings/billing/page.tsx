@@ -240,8 +240,8 @@ function BillingPageContent() {
           <p className="text-sm text-muted-foreground">
             Si vous avez des questions sur votre abonnement ou si vous rencontrez des problèmes,
             contactez-nous à{' '}
-            <a href="mailto:support@secu-planning.fr" className="text-primary hover:underline">
-              support@secu-planning.fr
+            <a href="mailto:support@shiftme.sbs" className="text-primary hover:underline">
+              support@shiftme.sbs
             </a>
           </p>
         </CardContent>

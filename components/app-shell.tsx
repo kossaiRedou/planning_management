@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import Image from "next/image"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Shield, LogOut, User } from "lucide-react"
+import { LogOut, User } from "lucide-react"
 
 interface NavItem {
   label: string
@@ -27,7 +28,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, navItems, activeTab, onTabChange }: AppShellProps) {
-  const { user, logout } = useAuth()
+  const { user, organization, logout } = useAuth()
 
   if (!user) return null
 
@@ -38,13 +39,26 @@ export function AppShell({ children, navItems, activeTab, onTabChange }: AppShel
       {/* Top Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card">
         <div className="flex h-14 items-center justify-between px-4 lg:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Shield className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">
-              Secu-Planning
-            </span>
+          {/* Left: Organisation branding */}
+          <div className="flex items-center gap-2.5">
+            {organization?.logo_url ? (
+              <Image
+                src={organization.logo_url}
+                alt={organization.name}
+                width={32}
+                height={32}
+                className="h-8 w-auto max-w-[120px] rounded object-contain"
+              />
+            ) : organization ? (
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+                {organization.name.slice(0, 2).toUpperCase()}
+              </div>
+            ) : null}
+            {organization && (
+              <span className="text-sm font-semibold text-foreground">
+                {organization.name}
+              </span>
+            )}
           </div>
 
           {/* Desktop Nav */}
@@ -63,7 +77,14 @@ export function AppShell({ children, navItems, activeTab, onTabChange }: AppShel
             ))}
           </nav>
 
-          <DropdownMenu>
+          <div className="flex items-center gap-3">
+            {/* Right: Powered by ShiftMe (desktop only) */}
+            <div className="hidden items-center gap-1.5 md:flex">
+              <Image src="/placeholder-logo.png" alt="ShiftMe" width={16} height={16} className="rounded opacity-60" />
+              <span className="text-xs text-muted-foreground">Powered by ShiftMe</span>
+            </div>
+
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="gap-2 px-2">
                 <Avatar className="h-7 w-7">
@@ -95,6 +116,7 @@ export function AppShell({ children, navItems, activeTab, onTabChange }: AppShel
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </header>
 

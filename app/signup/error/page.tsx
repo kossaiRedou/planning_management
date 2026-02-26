@@ -70,8 +70,8 @@ function ErrorContent() {
                   <p className="font-medium mb-1">Besoin d'aide ?</p>
                   <p className="text-muted-foreground">
                     Notre équipe de support est disponible pour vous aider :{' '}
-                    <a href="mailto:support@secu-planning.fr" className="text-primary hover:underline">
-                      support@secu-planning.fr
+                    <a href="mailto:support@shiftme.sbs" className="text-primary hover:underline">
+                      support@shiftme.sbs
                     </a>
                   </p>
                 </div>
@@ -98,8 +98,8 @@ function ErrorContent() {
         <div className="text-center text-sm text-muted-foreground">
           <p>
             Si le problème persiste, contactez-nous :{' '}
-            <a href="mailto:support@secu-planning.fr" className="text-primary hover:underline">
-              support@secu-planning.fr
+            <a href="mailto:support@shiftme.sbs" className="text-primary hover:underline">
+              support@shiftme.sbs
             </a>
           </p>
         </div>

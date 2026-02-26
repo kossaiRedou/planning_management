@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import Image from "next/image"
 
 function WelcomeAlert() {
   const searchParams = useSearchParams()
@@ -65,11 +66,9 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="flex w-full max-w-md flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-            <Shield className="h-7 w-7 text-primary-foreground" />
-          </div>
+          <Image src="/placeholder-logo.png" alt="ShiftMe" width={56} height={56} className="rounded-2xl" />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Secu-Planning
+            ShiftMe
           </h1>
           <p className="text-sm text-muted-foreground">
             Gestion des plannings de securite
@@ -95,7 +94,7 @@ function LoginForm() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="prenom.nom@secu-planning.fr"
+                  placeholder="prenom.nom@votreentreprise.fr"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -151,11 +150,11 @@ function LoginForm() {
               <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                 <p>
                   <span className="font-medium text-foreground">Admin :</span>{" "}
-                  admin@secu-planning.fr
+                  admin@votreentreprise.fr
                 </p>
                 <p>
                   <span className="font-medium text-foreground">Agent :</span>{" "}
-                  jean.martin@secu-planning.fr
+                  jean.martin@votreentreprise.fr
                 </p>
                 <p className="mt-1 italic">
                   Mot de passe : nimporte lequel

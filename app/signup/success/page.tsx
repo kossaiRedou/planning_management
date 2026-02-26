@@ -76,7 +76,7 @@ function SuccessContent() {
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-3xl">
-              Bienvenue sur Secu-Planning ! 🎉
+              Bienvenue sur ShiftMe !
             </CardTitle>
             <CardDescription className="text-base">
               Votre compte a été créé avec succès
@@ -150,8 +150,8 @@ function SuccessContent() {
                   <p className="font-medium mb-1">Besoin d'aide pour démarrer ?</p>
                   <p className="text-muted-foreground">
                     Notre équipe est disponible pour vous accompagner :{' '}
-                    <a href="mailto:support@secu-planning.fr" className="text-primary hover:underline">
-                      support@secu-planning.fr
+                    <a href="mailto:support@shiftme.sbs" className="text-primary hover:underline">
+                      support@shiftme.sbs
                     </a>
                   </p>
                 </div>
@@ -176,7 +176,7 @@ function SuccessContent() {
         <div className="text-center text-sm text-muted-foreground">
           <p>
             Besoin d'aide ?{' '}
-            <a href="mailto:support@secu-planning.fr" className="text-primary hover:underline">
+            <a href="mailto:support@shiftme.sbs" className="text-primary hover:underline">
               Contactez notre support
             </a>
           </p>

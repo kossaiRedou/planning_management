@@ -29,7 +29,7 @@ export async function POST(req: Request) {
           price_data: {
             currency: selectedPlan.currency,
             product_data: {
-              name: `Secu-Planning ${selectedPlan.name}`,
+              name: `ShiftMe ${selectedPlan.name}`,
               description: `Abonnement ${selectedPlan.name} - ${selectedPlan.features.join(', ')}`,
             },
             recurring: {

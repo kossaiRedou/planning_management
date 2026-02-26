@@ -521,7 +521,7 @@ export function AdminProfiles() {
                 type="email"
                 value={agentForm.email}
                 onChange={(e) => setAgentForm((f) => ({ ...f, email: e.target.value }))}
-                placeholder="jean.dupont@secu-planning.fr"
+                placeholder="jean.dupont@votreentreprise.fr"
               />
             </div>
             <div className="flex flex-col gap-2">

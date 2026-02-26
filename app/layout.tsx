@@ -7,9 +7,9 @@ import "./globals.css"
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata: Metadata = {
-  title: "Secu-Planning | Gestion des plannings de securite",
+  title: "ShiftMe | Gestion des plannings",
   description:
-    "Application de gestion des plannings pour agences de securite privee. Planification, disponibilites et suivi des heures.",
+    "Application de gestion des plannings. Planification, disponibilites et suivi des heures.",
 }
 
 export const viewport: Viewport = {
