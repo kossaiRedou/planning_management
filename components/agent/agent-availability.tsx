@@ -46,14 +46,19 @@ export function AgentAvailability() {
     const startStr = format(start, 'yyyy-MM-dd')
     const endStr = format(end, 'yyyy-MM-dd')
 
+    let cancelled = false
     setIsLoading(true)
-    supabase
-      .from('availabilities')
-      .select('*')
-      .eq('agent_id', userId)
-      .gte('date', startStr)
-      .lte('date', endStr)
-      .then(({ data, error }) => {
+
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('availabilities')
+          .select('*')
+          .eq('agent_id', userId)
+          .gte('date', startStr)
+          .lte('date', endStr)
+
+        if (cancelled) return
         if (!error && data) {
           setLocalAvailabilities((data as any[]).map((avail: any) => ({
             id: avail.id,
@@ -63,9 +68,14 @@ export function AgentAvailability() {
             available: avail.available,
           })))
         }
-      })
-      .catch((error) => console.error('Error loading availabilities:', error))
-      .finally(() => setIsLoading(false))
+      } catch (error) {
+        if (!cancelled) console.error('Error loading availabilities:', error)
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    })()
+
+    return () => { cancelled = true }
   }, [user?.id, currentMonth, supabase])
 
   const myAvailabilities = useMemo(() => {
