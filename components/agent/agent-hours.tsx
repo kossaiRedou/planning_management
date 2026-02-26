@@ -78,7 +78,7 @@ export function AgentHours() {
       })
       .catch((error) => console.error('Error loading hours:', error))
       .finally(() => setIsLoading(false))
-  }, [user, rangeStartStr, rangeEndStr, supabase])
+  }, [user?.id, user?.organization_id, rangeStartStr, rangeEndStr, supabase])
 
   const stats = useMemo(() => {
     let totalHours = 0

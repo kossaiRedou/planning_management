@@ -36,28 +36,26 @@ export function AgentAvailability() {
     return eachDayOfInterval({ start, end })
   }, [currentMonth])
 
-  // Load availabilities from Supabase
+  // Load availabilities (single query; deps stables pour éviter re-fetches inutiles)
   useEffect(() => {
-    if (!user) return
+    if (!user?.id) return
 
-    async function loadAvailabilities() {
-      if (!user) return
-      const userId = user.id
-      
-      setIsLoading(true)
-      try {
-        const start = startOfMonth(currentMonth)
-        const end = endOfMonth(currentMonth)
+    const userId = user.id
+    const start = startOfMonth(currentMonth)
+    const end = endOfMonth(currentMonth)
+    const startStr = format(start, 'yyyy-MM-dd')
+    const endStr = format(end, 'yyyy-MM-dd')
 
-        const { data, error } = await supabase
-          .from('availabilities')
-          .select('*')
-          .eq('agent_id', userId)
-          .gte('date', format(start, 'yyyy-MM-dd'))
-          .lte('date', format(end, 'yyyy-MM-dd'))
-
+    setIsLoading(true)
+    supabase
+      .from('availabilities')
+      .select('*')
+      .eq('agent_id', userId)
+      .gte('date', startStr)
+      .lte('date', endStr)
+      .then(({ data, error }) => {
         if (!error && data) {
-          setLocalAvailabilities((data as any[]).map(avail => ({
+          setLocalAvailabilities((data as any[]).map((avail: any) => ({
             id: avail.id,
             organization_id: avail.organization_id,
             agentId: avail.agent_id,
@@ -65,16 +63,10 @@ export function AgentAvailability() {
             available: avail.available,
           })))
         }
-
-      } catch (error) {
-        console.error('Error loading availabilities:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadAvailabilities()
-  }, [user, currentMonth, supabase])
+      })
+      .catch((error) => console.error('Error loading availabilities:', error))
+      .finally(() => setIsLoading(false))
+  }, [user?.id, currentMonth, supabase])
 
   const myAvailabilities = useMemo(() => {
     if (!user) return []

@@ -83,7 +83,7 @@ export function AgentPlanning() {
       })
       .catch((error) => console.error('Error loading planning:', error))
       .finally(() => setIsLoading(false))
-  }, [user, currentDate, viewMode, supabase])
+  }, [user?.id, user?.organization_id, currentDate, viewMode, supabase])
 
   const dateRange = useMemo(() => {
     if (viewMode === "week") {
