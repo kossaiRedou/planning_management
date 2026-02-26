@@ -42,9 +42,9 @@ import {
 } from "lucide-react"
 
 export function AdminProfiles() {
-  const { organization } = useAuth()
+  const { organization, session } = useAuth()
   const supabase = createClient()
-  
+
   const [agents, setAgents] = useState<User[]>([])
   const [sites, setSites] = useState<Site[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -69,35 +69,22 @@ export function AdminProfiles() {
     contactPhone: "",
   })
 
-  // Load data from Supabase
+  // Load agents (API) and sites (Supabase) in parallel; use session from auth context
   useEffect(() => {
-    if (!organization) return
+    if (!organization || !session?.access_token) return
 
-    async function loadData() {
-      if (!organization) return
-      const orgId = organization.id
-      
-      setIsLoading(true)
-      try {
-        // Get current session token
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          console.error('No session found')
-          setIsLoading(false)
-          return
-        }
+    const orgId = organization.id
+    const token = session.access_token
 
-        // Load agents from API route (server-side to access emails)
-        const response = await fetch('/api/get-users', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
-
+    setIsLoading(true)
+    Promise.all([
+      fetch('/api/get-users', { headers: { Authorization: `Bearer ${token}` } }),
+      supabase.from('sites').select('*').eq('organization_id', orgId),
+    ])
+      .then(async ([response, sitesRes]) => {
         if (response.ok) {
           const { profiles } = await response.json()
-          
-          const agentsWithEmails = profiles
+          const agentsWithEmails = (profiles || [])
             .filter((p: any) => p.role === 'agent')
             .map((profile: any) => ({
               id: profile.id,
@@ -109,20 +96,10 @@ export function AdminProfiles() {
               phone: profile.phone || undefined,
               certifications: profile.certifications || undefined,
             }))
-          
           setAgents(agentsWithEmails)
-        } else {
-          console.error('Failed to load agents')
         }
-
-        // Load sites
-        const { data: sitesData, error: sitesError } = await supabase
-          .from('sites')
-          .select('*')
-          .eq('organization_id', orgId)
-
-        if (!sitesError && sitesData) {
-          setSites((sitesData as any[]).map(site => ({
+        if (!sitesRes.error && sitesRes.data) {
+          setSites((sitesRes.data as any[]).map((site: any) => ({
             id: site.id,
             organization_id: site.organization_id,
             name: site.name,
@@ -131,16 +108,10 @@ export function AdminProfiles() {
             contactPhone: site.contact_phone || undefined,
           })))
         }
-
-      } catch (error) {
-        console.error('Error loading profiles:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
-  }, [organization, supabase])
+      })
+      .catch((error) => console.error('Error loading profiles:', error))
+      .finally(() => setIsLoading(false))
+  }, [organization, session?.access_token, supabase])
 
   const filteredAgents = agents.filter((a) => {
     const q = searchQuery.toLowerCase()
@@ -168,11 +139,8 @@ export function AdminProfiles() {
     }
 
     try {
-      // Get current session token
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Not authenticated')
+      if (!session?.access_token) throw new Error('Not authenticated')
 
-      // Call API route to create user (server-side)
       const response = await fetch('/api/create-user', {
         method: 'POST',
         headers: {
