@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -29,6 +30,12 @@ interface AppShellProps {
 
 export function AppShell({ children, navItems, activeTab, onTabChange }: AppShellProps) {
   const { user, organization, logout } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await logout()
+    router.push("/")
+  }
 
   if (!user) return null
 
@@ -110,7 +117,7 @@ export function AppShell({ children, navItems, activeTab, onTabChange }: AppShel
                 {user.role === "admin" ? "Administrateur" : "Agent"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="gap-2 text-destructive">
+              <DropdownMenuItem onClick={handleLogout} className="gap-2 text-destructive">
                 <LogOut className="h-4 w-4" />
                 Deconnexion
               </DropdownMenuItem>
