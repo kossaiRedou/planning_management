@@ -24,9 +24,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
 
-  const fetchUserProfile = useCallback(async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string, emailFromSession?: string) => {
     try {
-      // Optimize: Fetch profile with organization in a single query
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select(`
@@ -46,14 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Profile not found')
       }
 
-      // Get auth user email (from session, faster)
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      const email = emailFromSession ?? (await supabase.auth.getSession()).data.session?.user?.email ?? ''
 
       const profileData = profile as any
       const userData = {
         id: profileData.id,
         organization_id: profileData.organization_id,
-        email: currentSession?.user?.email || '',
+        email,
         firstName: profileData.first_name,
         lastName: profileData.last_name,
         role: profileData.role as "owner" | "admin" | "agent",
@@ -101,20 +99,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
 
-    // Get initial session
+    // Safety: never leave the app in loading state forever
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false)
+    }, 12000)
+
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession()
-        
+
         if (!mounted) return
 
         setSession(initialSession)
-        
+
         if (initialSession?.user) {
           try {
-            await fetchUserProfile(initialSession.user.id)
+            await fetchUserProfile(initialSession.user.id, initialSession.user.email ?? undefined)
           } catch (error) {
-            // Sign out if profile doesn't exist
             await supabase.auth.signOut()
             setSession(null)
           }
@@ -122,36 +123,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('Auth init error:', error)
       } finally {
-        if (mounted) {
-          setIsLoading(false)
-        }
+        if (mounted) setIsLoading(false)
       }
     }
 
     initializeAuth()
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      setSession(currentSession)
-      
-      if (currentSession?.user) {
-        try {
-          await fetchUserProfile(currentSession.user.id)
-        } catch (error) {
+      try {
+        setSession(currentSession)
+        if (currentSession?.user) {
+          try {
+            await fetchUserProfile(currentSession.user.id, currentSession.user.email ?? undefined)
+          } catch {
+            setUser(null)
+            setOrganization(null)
+          }
+        } else {
           setUser(null)
           setOrganization(null)
         }
-      } else {
-        setUser(null)
-        setOrganization(null)
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
     })
 
     return () => {
       mounted = false
+      clearTimeout(loadingTimeout)
       subscription.unsubscribe()
     }
   }, [supabase, fetchUserProfile])
@@ -182,7 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.user) {
         try {
-          await fetchUserProfile(data.user.id)
+          await fetchUserProfile(data.user.id, data.user.email ?? undefined)
         } catch (profileError: any) {
           // Disconnect the user if profile fetch fails
           await supabase.auth.signOut()

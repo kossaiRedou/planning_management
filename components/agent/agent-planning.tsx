@@ -38,35 +38,25 @@ export function AgentPlanning() {
   const [sites, setSites] = useState<Site[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Load shifts and sites from Supabase
+  // Load shifts and sites in parallel
   useEffect(() => {
     if (!user) return
 
-    async function loadData() {
-      if (!user) return
-      const userId = user.id
-      const userOrgId = user.organization_id
-      
-      setIsLoading(true)
-      try {
-        // Get date range
-        const start = viewMode === 'week'
-          ? startOfWeek(currentDate, { weekStartsOn: 1 })
-          : startOfMonth(currentDate)
-        const end = viewMode === 'week'
-          ? endOfWeek(currentDate, { weekStartsOn: 1 })
-          : endOfMonth(currentDate)
+    const userId = user.id
+    const userOrgId = user.organization_id
+    const start = viewMode === 'week' ? startOfWeek(currentDate, { weekStartsOn: 1 }) : startOfMonth(currentDate)
+    const end = viewMode === 'week' ? endOfWeek(currentDate, { weekStartsOn: 1 }) : endOfMonth(currentDate)
+    const startStr = format(start, 'yyyy-MM-dd')
+    const endStr = format(end, 'yyyy-MM-dd')
 
-        // Load shifts
-        const { data: shiftsData } = await supabase
-          .from('shifts')
-          .select('*')
-          .eq('agent_id', userId)
-          .gte('date', format(start, 'yyyy-MM-dd'))
-          .lte('date', format(end, 'yyyy-MM-dd'))
-
-        if (shiftsData) {
-          setMyShifts((shiftsData as any[]).map(shift => ({
+    setIsLoading(true)
+    Promise.all([
+      supabase.from('shifts').select('*').eq('agent_id', userId).gte('date', startStr).lte('date', endStr),
+      supabase.from('sites').select('*').eq('organization_id', userOrgId),
+    ])
+      .then(([shiftsRes, sitesRes]) => {
+        if (shiftsRes.data) {
+          setMyShifts((shiftsRes.data as any[]).map((shift: any) => ({
             id: shift.id,
             organization_id: shift.organization_id,
             agentId: shift.agent_id,
@@ -80,15 +70,8 @@ export function AgentPlanning() {
             status: shift.status,
           })))
         }
-
-        // Load sites
-        const { data: sitesData } = await supabase
-          .from('sites')
-          .select('*')
-          .eq('organization_id', userOrgId)
-
-        if (sitesData) {
-          setSites((sitesData as any[]).map(site => ({
+        if (sitesRes.data) {
+          setSites((sitesRes.data as any[]).map((site: any) => ({
             id: site.id,
             organization_id: site.organization_id,
             name: site.name,
@@ -97,15 +80,9 @@ export function AgentPlanning() {
             contactPhone: site.contact_phone || undefined,
           })))
         }
-
-      } catch (error) {
-        console.error('Error loading planning:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
+      })
+      .catch((error) => console.error('Error loading planning:', error))
+      .finally(() => setIsLoading(false))
   }, [user, currentDate, viewMode, supabase])
 
   const dateRange = useMemo(() => {

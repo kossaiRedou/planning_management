@@ -45,9 +45,6 @@ import {
   Check,
   FileDown,
 } from "lucide-react"
-import { downloadPlanningPdf } from "@/components/admin/planning-pdf-document"
-import { buildPlanningPdfSection } from "@/lib/planning-pdf-utils"
-
 export function AdminPlanning() {
   const { user, organization } = useAuth()
   const supabase = createClient()
@@ -77,28 +74,27 @@ export function AdminPlanning() {
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
 
-  // Load data from Supabase
+  // Load data from Supabase (parallel queries)
   useEffect(() => {
     if (!organization) return
 
-    async function loadData() {
-      if (!organization) return
-      const orgId = organization.id
-      
-      setIsLoading(true)
-      try {
-        // Load agents
-        const { data: agentsData } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('organization_id', orgId)
-          .eq('role', 'agent')
+    const orgId = organization.id
+    const weekStartStr = format(weekStart, 'yyyy-MM-dd')
+    const weekEndStr = format(weekEnd, 'yyyy-MM-dd')
 
-        if (agentsData) {
-          setAgents((agentsData as any[]).map(profile => ({
+    setIsLoading(true)
+    Promise.all([
+      supabase.from('user_profiles').select('*').eq('organization_id', orgId).eq('role', 'agent'),
+      supabase.from('sites').select('*').eq('organization_id', orgId),
+      supabase.from('shifts').select('*').eq('organization_id', orgId).gte('date', weekStartStr).lte('date', weekEndStr),
+      supabase.from('availabilities').select('*').eq('organization_id', orgId).gte('date', weekStartStr).lte('date', weekEndStr),
+    ])
+      .then(([agentsRes, sitesRes, shiftsRes, availRes]) => {
+        if (agentsRes.data) {
+          setAgents((agentsRes.data as any[]).map((profile: any) => ({
             id: profile.id,
             organization_id: profile.organization_id,
-            email: '', // Email not in profile table
+            email: '',
             firstName: profile.first_name,
             lastName: profile.last_name,
             role: 'agent' as const,
@@ -106,15 +102,8 @@ export function AdminPlanning() {
             certifications: profile.certifications || undefined,
           })))
         }
-
-        // Load sites
-        const { data: sitesData } = await supabase
-          .from('sites')
-          .select('*')
-          .eq('organization_id', orgId)
-
-        if (sitesData) {
-          setSites((sitesData as any[]).map(site => ({
+        if (sitesRes.data) {
+          setSites((sitesRes.data as any[]).map((site: any) => ({
             id: site.id,
             organization_id: site.organization_id,
             name: site.name,
@@ -123,20 +112,8 @@ export function AdminPlanning() {
             contactPhone: site.contact_phone || undefined,
           })))
         }
-
-        // Load shifts for the week
-        const weekStartStr = format(weekStart, 'yyyy-MM-dd')
-        const weekEndStr = format(weekEnd, 'yyyy-MM-dd')
-
-        const { data: shiftsData } = await supabase
-          .from('shifts')
-          .select('*')
-          .eq('organization_id', orgId)
-          .gte('date', weekStartStr)
-          .lte('date', weekEndStr)
-
-        if (shiftsData) {
-          setShifts((shiftsData as any[]).map(shift => ({
+        if (shiftsRes.data) {
+          setShifts((shiftsRes.data as any[]).map((shift: any) => ({
             id: shift.id,
             organization_id: shift.organization_id,
             agentId: shift.agent_id,
@@ -150,27 +127,10 @@ export function AdminPlanning() {
             status: shift.status,
           })))
         }
-
-        // Load availabilities
-        const { data: availData } = await supabase
-          .from('availabilities')
-          .select('*')
-          .eq('organization_id', orgId)
-          .gte('date', weekStartStr)
-          .lte('date', weekEndStr)
-
-        if (availData) {
-          setAvailabilities(availData as any[])
-        }
-
-      } catch (error) {
-        console.error('Error loading planning data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadData()
+        if (availRes.data) setAvailabilities(availRes.data as any[])
+      })
+      .catch((error) => console.error('Error loading planning data:', error))
+      .finally(() => setIsLoading(false))
   }, [organization, currentDate])
 
   const getShiftsForCell = useCallback(
@@ -273,6 +233,8 @@ export function AdminPlanning() {
     if (!organization) return
     setIsExportingPdf(true)
     try {
+      const { downloadPlanningPdf } = await import("@/components/admin/planning-pdf-document")
+      const { buildPlanningPdfSection } = await import("@/lib/planning-pdf-utils")
       const agentsToExport = pdfAgentId ? agents.filter((a) => a.id === pdfAgentId) : agents
       const scopeLabel = pdfAgentId
         ? `Agent : ${agents.find((a) => a.id === pdfAgentId)?.firstName} ${agents.find((a) => a.id === pdfAgentId)?.lastName}`

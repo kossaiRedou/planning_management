@@ -37,28 +37,21 @@ export function AgentHours() {
   const rangeStartStr = format(rangeStart, "yyyy-MM-dd")
   const rangeEndStr = format(rangeEnd, "yyyy-MM-dd")
 
-  // Load shifts from Supabase (deps stables pour éviter la boucle de re-renders)
+  // Load shifts and sites in parallel (deps stables pour éviter la boucle de re-renders)
   useEffect(() => {
     if (!user) return
 
-    async function loadShifts() {
-      if (!user) return
-      const userId = user.id
-      const userOrgId = user.organization_id
-      
-      setIsLoading(true)
-      try {
-        // Load shifts
-        const { data: shiftsData } = await supabase
-          .from('shifts')
-          .select('*')
-          .eq('agent_id', userId)
-          .gte('date', rangeStartStr)
-          .lte('date', rangeEndStr)
-          .order('date', { ascending: true })
+    const userId = user.id
+    const userOrgId = user.organization_id
 
-        if (shiftsData) {
-          setMyShifts((shiftsData as any[]).map(shift => ({
+    setIsLoading(true)
+    Promise.all([
+      supabase.from('shifts').select('*').eq('agent_id', userId).gte('date', rangeStartStr).lte('date', rangeEndStr).order('date', { ascending: true }),
+      supabase.from('sites').select('*').eq('organization_id', userOrgId),
+    ])
+      .then(([shiftsRes, sitesRes]) => {
+        if (shiftsRes.data) {
+          setMyShifts((shiftsRes.data as any[]).map((shift: any) => ({
             id: shift.id,
             organization_id: shift.organization_id,
             agentId: shift.agent_id,
@@ -72,15 +65,8 @@ export function AgentHours() {
             status: shift.status,
           })))
         }
-
-        // Load sites
-        const { data: sitesData } = await supabase
-          .from('sites')
-          .select('*')
-          .eq('organization_id', userOrgId)
-
-        if (sitesData) {
-          setSites((sitesData as any[]).map(site => ({
+        if (sitesRes.data) {
+          setSites((sitesRes.data as any[]).map((site: any) => ({
             id: site.id,
             organization_id: site.organization_id,
             name: site.name,
@@ -89,15 +75,9 @@ export function AgentHours() {
             contactPhone: site.contact_phone || undefined,
           })))
         }
-
-      } catch (error) {
-        console.error('Error loading hours:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadShifts()
+      })
+      .catch((error) => console.error('Error loading hours:', error))
+      .finally(() => setIsLoading(false))
   }, [user, rangeStartStr, rangeEndStr, supabase])
 
   const stats = useMemo(() => {
