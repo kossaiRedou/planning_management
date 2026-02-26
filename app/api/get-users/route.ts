@@ -59,21 +59,24 @@ export async function GET(req: Request) {
       )
     }
 
-    const profileList = profiles as any[]
+    // Get emails from auth.users for these profiles
+    const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers()
 
-    // Fetch emails only for these users (parallel), instead of listUsers() which loads everyone
-    const emailByUserId = new Map<string, string>()
-    await Promise.all(
-      profileList.map(async (profile: { id: string }) => {
-        const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(profile.id)
-        if (authUser?.email) emailByUserId.set(profile.id, authUser.email)
-      })
-    )
+    if (usersError || !users) {
+      return NextResponse.json(
+        { error: usersError?.message || 'Failed to fetch users' },
+        { status: 500 }
+      )
+    }
 
-    const profilesWithEmails = profileList.map((profile: any) => ({
-      ...profile,
-      email: emailByUserId.get(profile.id) || '',
-    }))
+    // Combine profiles with emails
+    const profilesWithEmails = (profiles as any[]).map((profile: any) => {
+      const authUser = users.find(u => u.id === profile.id)
+      return {
+        ...profile,
+        email: authUser?.email || '',
+      }
+    })
 
     return NextResponse.json({
       profiles: profilesWithEmails,

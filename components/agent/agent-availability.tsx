@@ -36,31 +36,28 @@ export function AgentAvailability() {
     return eachDayOfInterval({ start, end })
   }, [currentMonth])
 
-  // Load availabilities (single query; deps stables pour éviter re-fetches inutiles)
+  // Load availabilities from Supabase
   useEffect(() => {
-    if (!user?.id) return
+    if (!user) return
 
-    const userId = user.id
-    const start = startOfMonth(currentMonth)
-    const end = endOfMonth(currentMonth)
-    const startStr = format(start, 'yyyy-MM-dd')
-    const endStr = format(end, 'yyyy-MM-dd')
-
-    let cancelled = false
-    setIsLoading(true)
-
-    void (async () => {
+    async function loadAvailabilities() {
+      if (!user) return
+      const userId = user.id
+      
+      setIsLoading(true)
       try {
+        const start = startOfMonth(currentMonth)
+        const end = endOfMonth(currentMonth)
+
         const { data, error } = await supabase
           .from('availabilities')
           .select('*')
           .eq('agent_id', userId)
-          .gte('date', startStr)
-          .lte('date', endStr)
+          .gte('date', format(start, 'yyyy-MM-dd'))
+          .lte('date', format(end, 'yyyy-MM-dd'))
 
-        if (cancelled) return
         if (!error && data) {
-          setLocalAvailabilities((data as any[]).map((avail: any) => ({
+          setLocalAvailabilities((data as any[]).map(avail => ({
             id: avail.id,
             organization_id: avail.organization_id,
             agentId: avail.agent_id,
@@ -68,15 +65,16 @@ export function AgentAvailability() {
             available: avail.available,
           })))
         }
-      } catch (error) {
-        if (!cancelled) console.error('Error loading availabilities:', error)
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
-    })()
 
-    return () => { cancelled = true }
-  }, [user?.id, currentMonth, supabase])
+      } catch (error) {
+        console.error('Error loading availabilities:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadAvailabilities()
+  }, [user, currentMonth, supabase])
 
   const myAvailabilities = useMemo(() => {
     if (!user) return []
