@@ -50,13 +50,33 @@
   color: var(--accent);
 }
 
-.landing nav ul {
+.landing .nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.landing .nav-toggle:hover {
+  background: var(--rule);
+  color: var(--ink);
+}
+
+.landing nav ul.nav-menu {
   list-style: none;
   display: flex;
   gap: 2.5rem;
 }
 
-.landing nav ul a {
+.landing nav ul.nav-menu a {
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 400;
@@ -65,7 +85,7 @@
   transition: color 0.2s;
 }
 
-.landing nav ul a:hover {
+.landing nav ul.nav-menu a:hover {
   color: var(--ink);
 }
 
@@ -793,8 +813,48 @@
 }
 
 @media (max-width: 900px) {
-  .landing nav ul {
+  .landing .nav-toggle {
+    display: flex;
+  }
+
+  .landing nav ul.nav-menu {
+    position: fixed;
+    top: 68px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: 1rem 5vw 1.5rem;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--rule);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     display: none;
+  }
+
+  .landing nav.nav-open ul.nav-menu {
+    display: flex;
+  }
+
+  .landing nav ul.nav-menu li {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .landing nav ul.nav-menu li:last-child {
+    border-bottom: none;
+    margin-top: 0.5rem;
+  }
+
+  .landing nav ul.nav-menu a {
+    display: block;
+    padding: 0.9rem 0;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+
+  .landing nav ul.nav-menu .nav-cta {
+    text-align: center;
+    padding: 0.75rem 1.4rem;
   }
   .landing .features-grid,
   .landing .steps,

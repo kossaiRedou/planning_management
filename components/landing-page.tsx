@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ChevronUp } from "lucide-react"
+import { ChevronUp, Menu, X } from "lucide-react"
 
 export function LandingPage() {
   const revealRef = useRef<HTMLDivElement>(null)
   const [showBackToTop, setShowBackToTop] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setShowBackToTop(window.scrollY > 400)
@@ -36,16 +37,25 @@ export function LandingPage() {
 
   return (
     <div className="landing" ref={revealRef}>
-      <nav>
-        <Link href="/" className="nav-logo">
+      <nav className={mobileMenuOpen ? "nav-open" : ""}>
+        <Link href="/" className="nav-logo" onClick={() => setMobileMenuOpen(false)}>
           <Image src="/logowithoutBG.png" alt="ShiftMe" width={40} height={40} className="rounded object-contain" priority />
           Shift<span>Me</span>
         </Link>
-        <ul>
-          <li><Link href="#fonctions">Fonctions</Link></li>
-          <li><Link href="#comment">Comment ça marche</Link></li>
-          <li><Link href="#tarifs">Tarifs</Link></li>
-          <li><Link href="/signup" className="nav-cta">Essai gratuit</Link></li>
+        <button
+          type="button"
+          className="nav-toggle"
+          onClick={() => setMobileMenuOpen((o) => !o)}
+          aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+        <ul className="nav-menu">
+          <li><Link href="#fonctions" onClick={() => setMobileMenuOpen(false)}>Fonctions</Link></li>
+          <li><Link href="#comment" onClick={() => setMobileMenuOpen(false)}>Comment ça marche</Link></li>
+          <li><Link href="#tarifs" onClick={() => setMobileMenuOpen(false)}>Tarifs</Link></li>
+          <li><Link href="/signup" className="nav-cta" onClick={() => setMobileMenuOpen(false)}>Essai gratuit</Link></li>
         </ul>
       </nav>
 
