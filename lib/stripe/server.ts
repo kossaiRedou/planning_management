@@ -8,7 +8,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 export const PLANS = {
   standard: {
     name: 'Standard',
-    price: 4900, // 49€
+    price: 199, // 1.99€
     currency: 'eur',
     interval: 'month' as const,
     features: [
@@ -26,7 +26,7 @@ export const PLANS = {
   },
   premium: {
     name: 'Premium',
-    price: 9900, // 99€
+    price: 1199, // 99€
     currency: 'eur',
     interval: 'month' as const,
     features: [
