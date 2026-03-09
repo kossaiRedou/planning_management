@@ -206,7 +206,7 @@ export function LandingPage() {
         <div className="plans">
           <div className="plan reveal">
             <span className="plan-label">Standard</span>
-            <div className="plan-price"><sup>€</sup>49<sub>/mois</sub></div>
+            <div className="plan-price"><sup>€</sup>1.99<sub>/mois</sub></div>
             <p className="plan-desc">Pour les petites équipes qui veulent gagner du temps sur la planification.</p>
             <hr className="plan-divider" />
             <ul>
@@ -219,7 +219,7 @@ export function LandingPage() {
           </div>
           <div className="plan plan-featured reveal">
             <span className="plan-label">Premium</span>
-            <div className="plan-price"><sup>€</sup>99<sub>/mois</sub></div>
+            <div className="plan-price"><sup>€</sup>12.99<sub>/mois</sub></div>
             <p className="plan-desc">Pour les équipes plus structurées : agents et sites illimités, support prioritaire.</p>
             <hr className="plan-divider" />
             <ul>
