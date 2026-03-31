@@ -51,7 +51,7 @@ export interface Shift {
   notes?: string
   isNight: boolean
   isSunday: boolean
-  status?: 'scheduled' | 'completed' | 'canceled'
+  status?: 'draft' | 'scheduled' | 'completed' | 'canceled'
   created_at?: string
   updated_at?: string
 }

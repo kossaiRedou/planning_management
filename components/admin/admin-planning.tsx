@@ -181,7 +181,7 @@ export function AdminPlanning() {
           notes: newShiftNotes || null,
           is_night: isNight,
           is_sunday: isSun,
-          status: 'scheduled',
+          status: 'draft',
         })
         .select()
         .single()
