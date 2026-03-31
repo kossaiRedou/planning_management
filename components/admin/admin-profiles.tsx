@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
+
 import {
   Dialog,
   DialogContent,
@@ -226,9 +226,9 @@ export function AdminProfiles() {
         `Il peut se connecter avec ce mot de passe ou en définir un nouveau via le lien dans l'email.`
       
       alert(message)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding agent:', error)
-      alert(`Erreur: ${error.message}`)
+      alert(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 
@@ -270,9 +270,9 @@ export function AdminProfiles() {
       setSites((prev) => [...prev, newSite])
       setShowAddSite(false)
       setSiteForm({ name: "", address: "", contactName: "", contactPhone: "" })
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error adding site:', error)
-      alert(`Erreur: ${error.message}`)
+      alert(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 
@@ -289,9 +289,9 @@ export function AdminProfiles() {
       if (error) throw error
 
       setAgents((prev) => prev.filter((a) => a.id !== id))
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error removing agent:', error)
-      alert(`Erreur: ${error.message}`)
+      alert(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 
@@ -307,9 +307,9 @@ export function AdminProfiles() {
       if (error) throw error
 
       setSites((prev) => prev.filter((s) => s.id !== id))
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error removing site:', error)
-      alert(`Erreur: ${error.message}`)
+      alert(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 

@@ -163,9 +163,9 @@ function TeamPageContent() {
         `Il peut se connecter avec ce mot de passe ou en définir un nouveau via le lien dans l'email.`
       
       alert(message)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error inviting member:', error)
-      alert(`Erreur: ${error.message}`)
+      alert(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     } finally {
       setInviting(false)
     }
@@ -183,9 +183,9 @@ function TeamPageContent() {
       if (error) throw error
 
       setTeamMembers(prev => prev.filter(m => m.id !== memberId))
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error removing member:', error)
-      alert(`Erreur: ${error.message}`)
+      alert(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 

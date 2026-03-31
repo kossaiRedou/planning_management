@@ -1,10 +1,8 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { AuthProvider, useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/lib/auth-context"
 import { LandingPage } from "@/components/landing-page"
 
 function HomeContent() {

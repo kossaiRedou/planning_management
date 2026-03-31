@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -30,11 +29,9 @@ interface AppShellProps {
 
 export function AppShell({ children, navItems, activeTab, onTabChange }: AppShellProps) {
   const { user, organization, logout } = useAuth()
-  const router = useRouter()
 
   const handleLogout = async () => {
     await logout()
-    router.push("/")
   }
 
   if (!user) return null

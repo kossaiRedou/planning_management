@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react"
 import { createClient, resetClient } from "./supabase/client"
 import type { User, Organization } from "./types"
 import type { Session } from "@supabase/supabase-js"
@@ -22,137 +22,110 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const fetchUserProfile = useCallback(async (userId: string, emailFromSession?: string) => {
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select(`
-          *,
-          organization:organizations(*)
-        `)
-        .eq('id', userId)
-        .single()
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select(`
+        *,
+        organization:organizations(*)
+      `)
+      .eq('id', userId)
+      .single()
 
-      if (profileError) {
-        console.error('Error fetching profile:', profileError)
-        throw profileError
-      }
-
-      if (!profile || !(profile as any).organization) {
-        console.error('No profile or organization found')
-        throw new Error('Profile not found')
-      }
-
-      const email = emailFromSession ?? (await supabase.auth.getSession()).data.session?.user?.email ?? ''
-
-      const profileData = profile as any
-      const userData = {
-        id: profileData.id,
-        organization_id: profileData.organization_id,
-        email,
-        firstName: profileData.first_name,
-        lastName: profileData.last_name,
-        role: profileData.role as "owner" | "admin" | "agent",
-        phone: profileData.phone || undefined,
-        certifications: profileData.certifications || undefined,
-        created_at: profileData.created_at,
-        updated_at: profileData.updated_at,
-      }
-      setUser(userData)
-
-      const org = profileData.organization as any
-      if (org) {
-        const orgData = {
-          id: org.id,
-          name: org.name,
-          email: org.email,
-          phone: org.phone || undefined,
-          address: org.address || undefined,
-          logo_url: org.logo_url || undefined,
-          stripe_customer_id: org.stripe_customer_id || undefined,
-          stripe_subscription_id: org.stripe_subscription_id || undefined,
-          subscription_status: org.subscription_status as 'active' | 'trialing' | 'past_due' | 'canceled',
-          subscription_plan: org.subscription_plan as 'standard' | 'premium',
-          trial_ends_at: org.trial_ends_at || undefined,
-          created_at: org.created_at,
-          updated_at: org.updated_at,
-        }
-        setOrganization(orgData)
-      }
-    } catch (error: any) {
-      console.error('Auth error:', error.message)
+    if (profileError || !profile || !(profile as any).organization) {
       setUser(null)
       setOrganization(null)
-      throw error
+      throw new Error('Profile not found')
+    }
+
+    const email = emailFromSession ?? ''
+    const profileData = profile as any
+
+    setUser({
+      id: profileData.id,
+      organization_id: profileData.organization_id,
+      email,
+      firstName: profileData.first_name,
+      lastName: profileData.last_name,
+      role: profileData.role as "owner" | "admin" | "agent",
+      phone: profileData.phone || undefined,
+      certifications: profileData.certifications || undefined,
+      created_at: profileData.created_at,
+      updated_at: profileData.updated_at,
+    })
+
+    const org = profileData.organization as any
+    if (org) {
+      setOrganization({
+        id: org.id,
+        name: org.name,
+        email: org.email,
+        phone: org.phone || undefined,
+        address: org.address || undefined,
+        logo_url: org.logo_url || undefined,
+        stripe_customer_id: org.stripe_customer_id || undefined,
+        stripe_subscription_id: org.stripe_subscription_id || undefined,
+        subscription_status: org.subscription_status as 'active' | 'trialing' | 'past_due' | 'canceled',
+        subscription_plan: org.subscription_plan as 'standard' | 'premium',
+        trial_ends_at: org.trial_ends_at || undefined,
+        created_at: org.created_at,
+        updated_at: org.updated_at,
+      })
     }
   }, [supabase])
 
   const refreshUser = useCallback(async () => {
-    const { data: { session: currentSession } } = await supabase.auth.getSession()
-    if (currentSession?.user) {
-      await fetchUserProfile(currentSession.user.id)
+    const { data: { session: s } } = await supabase.auth.getSession()
+    if (s?.user) {
+      await fetchUserProfile(s.user.id, s.user.email ?? undefined)
     }
   }, [supabase, fetchUserProfile])
 
   useEffect(() => {
     let mounted = true
 
-    // Safety: never leave the app in loading state forever
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false)
-    }, 12000)
+    const safetyTimer = setTimeout(() => { if (mounted) setIsLoading(false) }, 5000)
 
-    const initializeAuth = async () => {
-      try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession()
-
-        if (!mounted) return
-
-        setSession(initialSession)
-
-        if (initialSession?.user) {
-          try {
-            await fetchUserProfile(initialSession.user.id, initialSession.user.email ?? undefined)
-          } catch (error) {
-            await supabase.auth.signOut()
-            setSession(null)
-          }
+    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
+      if (!mounted) return
+      setSession(s)
+      if (s?.user) {
+        try {
+          await fetchUserProfile(s.user.id, s.user.email ?? undefined)
+        } catch {
+          await supabase.auth.signOut().catch(() => {})
+          setSession(null)
         }
-      } catch (error) {
-        console.error('Auth init error:', error)
-      } finally {
-        if (mounted) setIsLoading(false)
       }
-    }
+    }).catch(() => {}).finally(() => {
+      if (mounted) setIsLoading(false)
+    })
 
-    initializeAuth()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      try {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, currentSession) => {
+        if (!mounted) return
         setSession(currentSession)
         if (currentSession?.user) {
           try {
             await fetchUserProfile(currentSession.user.id, currentSession.user.email ?? undefined)
           } catch {
+            await supabase.auth.signOut().catch(() => {})
             setUser(null)
             setOrganization(null)
+            setSession(null)
           }
         } else {
           setUser(null)
           setOrganization(null)
         }
-      } finally {
-        setIsLoading(false)
       }
-    })
+    )
 
     return () => {
       mounted = false
-      clearTimeout(loadingTimeout)
+      clearTimeout(safetyTimer)
       subscription.unsubscribe()
     }
   }, [supabase, fetchUserProfile])
@@ -160,52 +133,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
       if (error) {
         setIsLoading(false)
-        
-        // Translate common Supabase errors to French
-        let errorMessage = error.message
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Email ou mot de passe incorrect'
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Veuillez confirmer votre email avant de vous connecter'
-        } else if (error.message.includes('User not found')) {
-          errorMessage = 'Aucun compte trouvé avec cet email'
-        }
-        
-        return { success: false, error: errorMessage }
+        let msg = error.message
+        if (msg.includes('Invalid login credentials')) msg = 'Email ou mot de passe incorrect'
+        else if (msg.includes('Email not confirmed')) msg = 'Veuillez confirmer votre email avant de vous connecter'
+        else if (msg.includes('User not found')) msg = 'Aucun compte trouvé avec cet email'
+        return { success: false, error: msg }
       }
 
       if (data.user) {
         try {
-          await fetchUserProfile(data.user.id, data.user.email ?? undefined)
-        } catch (profileError: any) {
-          // Disconnect the user if profile fetch fails
-          await supabase.auth.signOut()
+          await Promise.race([
+            fetchUserProfile(data.user.id, data.user.email ?? undefined),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+          ])
+        } catch {
+          await supabase.auth.signOut().catch(() => {})
           setIsLoading(false)
-          return { 
-            success: false, 
-            error: 'Votre compte existe mais votre profil est introuvable. Veuillez contacter le support.' 
-          }
+          return { success: false, error: 'Profil introuvable ou serveur lent. Réessayez.' }
         }
       }
 
       setIsLoading(false)
       return { success: true }
-    } catch (error: any) {
-      console.error('Login error:', error.message)
+    } catch (error) {
       setIsLoading(false)
-      return { success: false, error: error.message || 'Une erreur est survenue' }
+      const msg = error instanceof Error ? error.message : 'Une erreur est survenue'
+      return { success: false, error: msg }
     }
   }, [supabase, fetchUserProfile])
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut({ scope: 'local' })
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
     setUser(null)
     setOrganization(null)
     setSession(null)

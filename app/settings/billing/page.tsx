@@ -52,9 +52,10 @@ function BillingPageContent() {
       if (!stripe) throw new Error('Stripe failed to load')
 
       await stripe.redirectToCheckout({ sessionId })
-    } catch (error: any) {
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue'
       console.error('Error:', error)
-      alert(`Erreur: ${error.message}`)
+      alert(`Erreur: ${msg}`)
     } finally {
       setIsLoading(false)
     }
@@ -71,9 +72,10 @@ function BillingPageContent() {
       if (error) throw new Error(error)
 
       window.location.href = url
-    } catch (error: any) {
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue'
       console.error('Error:', error)
-      alert(`Erreur: ${error.message}`)
+      alert(`Erreur: ${msg}`)
       setPortalLoading(false)
     }
   }
