@@ -35,7 +35,7 @@ import {
   subMonths,
 } from "date-fns"
 import { fr } from "date-fns/locale"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, FileDown, FileSpreadsheet } from "lucide-react"
 
 type PeriodType = "week" | "month"
 
@@ -179,11 +179,78 @@ export function AdminBoard() {
       ? format(rangeStart, "MMMM yyyy", { locale: fr })
       : `Sem. du ${format(rangeStart, "d MMM", { locale: fr })}`
 
+  const [isExporting, setIsExporting] = useState(false)
+
+  function exportCSV() {
+    const header = ["Date", "Site", "Horaires", "Durée (h)", "Type"]
+    const rows = shifts.map((shift) => {
+      const site = sites.find((s) => s.id === shift.siteId)
+      const duration = getShiftDurationHours(shift)
+      const type = shift.isNight ? "Nuit" : shift.isSunday ? "Dimanche" : "Jour"
+      return [
+        format(parseISO(shift.date), "dd/MM/yyyy"),
+        site?.name ?? "",
+        `${formatTimeNoSeconds(shift.startTime)} - ${formatTimeNoSeconds(shift.endTime)}`,
+        formatHoursDisplay(duration),
+        type,
+      ]
+    })
+
+    const bom = "\uFEFF"
+    const csv = bom + [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(";")).join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `rapport-${format(rangeStart, "yyyy-MM-dd")}_${format(rangeEnd, "yyyy-MM-dd")}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function exportPDF() {
+    setIsExporting(true)
+    try {
+      const { downloadBoardPdf } = await import("@/components/admin/board-pdf-document")
+      await downloadBoardPdf(
+        {
+          periodLabel: periodLabel,
+          orgName: organization?.name ?? "",
+          shifts,
+          sites,
+          totalHours: formatHoursDisplay(stats.totalHours),
+          dayHours: formatHoursDisplay(stats.dayHours),
+          nightHours: formatHoursDisplay(stats.nightHours),
+          formatTimeNoSeconds,
+          formatHoursDisplay,
+        },
+        `rapport-${format(rangeStart, "yyyy-MM-dd")}_${format(rangeEnd, "yyyy-MM-dd")}.pdf`
+      )
+    } catch (e) {
+      console.error("Export PDF failed:", e)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   if (!organization) return null
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold text-[#222222]">Tableau de bord</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-[#222222]">Tableau de bord</h1>
+        {shifts.length > 0 && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
+              <FileSpreadsheet className="h-4 w-4" />
+              CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportPDF} disabled={isExporting} className="gap-1.5">
+              <FileDown className="h-4 w-4" />
+              {isExporting ? "Export…" : "PDF"}
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Filtres */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
