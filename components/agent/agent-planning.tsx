@@ -133,34 +133,39 @@ export function AgentPlanning() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Mon Planning</h1>
-        <p className="text-sm text-muted-foreground">
-          Consultez vos missions et horaires
-        </p>
-      </div>
-
-      {/* Controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)} aria-label="Periode precedente">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="min-w-48 text-center text-sm font-medium text-foreground capitalize">
-            {headerLabel}
-          </span>
-          <Button variant="outline" size="icon" onClick={() => navigate(1)} aria-label="Periode suivante">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-        <Tabs value={viewMode} onValueChange={(v) => { setViewMode(v as ViewMode); setSelectedDay(null) }}>
-          <TabsList>
-            <TabsTrigger value="week">Semaine</TabsTrigger>
-            <TabsTrigger value="month">Mois</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+    <div className="flex flex-col gap-5">
+      {/* Header card */}
+      <Card className="border-border/60">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Mon planning</h1>
+              <p className="text-xs text-muted-foreground">
+                Consultez vos missions et horaires
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(-1)} aria-label="Periode precedente">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="min-w-[130px] text-center text-xs font-medium capitalize text-foreground">
+                  {headerLabel}
+                </span>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate(1)} aria-label="Periode suivante">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <Tabs value={viewMode} onValueChange={(v) => { setViewMode(v as ViewMode); setSelectedDay(null) }}>
+                <TabsList>
+                  <TabsTrigger value="week" className="text-xs">Semaine</TabsTrigger>
+                  <TabsTrigger value="month" className="text-xs">Mois</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Calendar Grid - structure claire, couleurs par statut */}
       {viewMode === "week" ? (
@@ -176,8 +181,8 @@ export function AgentPlanning() {
                 key={day.toISOString()}
                 className={`cursor-pointer transition-colors hover:opacity-95 ${
                   !isRest ? "bg-primary/5" : "bg-green-500/5"
-                } ${today ? "ring-2 ring-[#2C5BD3]" : ""} ${
-                  selectedDay && isSameDay(day, selectedDay) ? "ring-2 ring-[#2C5BD3]" : ""
+                } ${today ? "ring-2 ring-primary" : ""} ${
+                  selectedDay && isSameDay(day, selectedDay) ? "ring-2 ring-primary" : ""
                 }`}
                 onClick={() => setSelectedDay(day)}
               >

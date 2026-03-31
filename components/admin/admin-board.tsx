@@ -235,28 +235,67 @@ export function AdminBoard() {
   if (!organization) return null
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-foreground">Tableau de bord</h1>
-        {shifts.length > 0 && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
-              <FileSpreadsheet className="h-4 w-4" />
-              CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportPDF} disabled={isExporting} className="gap-1.5">
-              <FileDown className="h-4 w-4" />
-              {isExporting ? "Export…" : "PDF"}
-            </Button>
+    <div className="flex flex-col gap-5">
+      {/* Header card */}
+      <Card className="border-border/60">
+        <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Tableau de bord</h1>
+            <p className="text-xs text-muted-foreground">Vue d'ensemble de l'activité</p>
           </div>
-        )}
-      </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg border border-border bg-muted/30 p-0.5">
+              <button
+                type="button"
+                onClick={() => setPeriod("week")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  period === "week" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Semaine
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriod("month")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  period === "month" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Mois
+              </button>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(-1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="min-w-[130px] text-center text-xs font-medium capitalize text-foreground">
+                {periodLabel}
+              </span>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            {shifts.length > 0 && (
+              <div className="flex gap-1.5">
+                <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 gap-1.5 text-xs">
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportPDF} disabled={isExporting} className="h-8 gap-1.5 text-xs">
+                  <FileDown className="h-3.5 w-3.5" />
+                  {isExporting ? "…" : "PDF"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Filtres */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Filtres card */}
+      <Card className="border-border/60">
+        <CardContent className="flex flex-wrap items-center gap-2 p-3">
           <Select value={agentId || "all"} onValueChange={(v) => setAgentId(v === "all" ? "" : v)}>
-            <SelectTrigger className="h-9 w-[160px] border-border bg-card text-sm text-foreground">
+            <SelectTrigger className="h-8 w-[150px] text-xs">
               <SelectValue placeholder="Agent" />
             </SelectTrigger>
             <SelectContent>
@@ -269,7 +308,7 @@ export function AdminBoard() {
             </SelectContent>
           </Select>
           <Select value={siteId || "all"} onValueChange={(v) => setSiteId(v === "all" ? "" : v)}>
-            <SelectTrigger className="h-9 w-[160px] border-border bg-card text-sm text-foreground">
+            <SelectTrigger className="h-8 w-[150px] text-xs">
               <SelectValue placeholder="Site" />
             </SelectTrigger>
             <SelectContent>
@@ -281,64 +320,39 @@ export function AdminBoard() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="flex rounded-lg border border-border bg-muted/30 p-0.5">
-            <button
-              type="button"
-              onClick={() => setPeriod("week")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                period === "week" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Semaine
-            </button>
-            <button
-              type="button"
-              onClick={() => setPeriod("month")}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                period === "month" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Mois
-            </button>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(-1)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="min-w-[140px] text-center text-sm font-medium capitalize text-foreground">
-              {periodLabel}
-            </span>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Totaux - 2 décimales, un peu colorés */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-blue-300">Total</p>
-          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.totalHours)} h</p>
-        </div>
-        <div className="rounded-lg border border-amber-700 bg-amber-500/10 px-3 py-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-amber-300">Jour</p>
-          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.dayHours)} h</p>
-        </div>
-        <div className="rounded-lg border border-blue-700 bg-blue-500/10 px-3 py-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-blue-300">Nuit</p>
-          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.nightHours)} h</p>
-        </div>
-        <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Missions</p>
-          <p className="text-lg font-semibold text-foreground">{stats.shiftCount}</p>
-        </div>
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Total</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{formatHoursDisplay(stats.totalHours)}<span className="ml-0.5 text-sm font-normal text-muted-foreground">h</span></p>
+          </CardContent>
+        </Card>
+        <Card className="border-amber-800/30 bg-amber-500/5">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-amber-400">Jour</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{formatHoursDisplay(stats.dayHours)}<span className="ml-0.5 text-sm font-normal text-muted-foreground">h</span></p>
+          </CardContent>
+        </Card>
+        <Card className="border-blue-800/30 bg-blue-500/5">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-blue-400">Nuit</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{formatHoursDisplay(stats.nightHours)}<span className="ml-0.5 text-sm font-normal text-muted-foreground">h</span></p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Missions</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{stats.shiftCount}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tableau des missions */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden border-border/60">
         <CardContent className="p-0">
           {isLoading ? (
             <p className="py-10 text-center text-sm text-muted-foreground">Chargement…</p>

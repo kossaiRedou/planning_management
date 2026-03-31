@@ -153,73 +153,86 @@ export function AgentHours() {
     : `Sem. du ${format(rangeStart, "d MMM", { locale: fr })}`
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold text-foreground">Heures</h1>
+    <div className="flex flex-col gap-5">
+      {/* Header card */}
+      <Card className="border-border/60">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Mes heures</h1>
+              <p className="text-xs text-muted-foreground">Suivi de votre activité</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex rounded-lg border border-border bg-muted/30 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setPeriod("week")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    period === "week" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Semaine
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriod("month")}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    period === "month" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Mois
+                </button>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(-1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="min-w-[120px] text-center text-xs font-medium capitalize text-foreground">
+                  {periodLabel}
+                </span>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button variant="ghost" size="sm" onClick={exportCSV} className="h-8 gap-1.5 text-xs text-muted-foreground">
+                <Download className="h-3.5 w-3.5" />
+                CSV
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Filtre Mois / Semaine + Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-0.5">
-          <button
-            type="button"
-            onClick={() => setPeriod("week")}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              period === "week" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Semaine
-          </button>
-          <button
-            type="button"
-            onClick={() => setPeriod("month")}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              period === "month" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Mois
-          </button>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(-1)}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="min-w-[140px] text-center text-sm font-medium capitalize text-foreground">
-            {periodLabel}
-          </span>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(1)}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-primary">Total</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{formatHoursDisplay(stats.totalHours)}<span className="ml-0.5 text-sm font-normal text-muted-foreground">h</span></p>
+          </CardContent>
+        </Card>
+        <Card className="border-amber-800/30 bg-amber-500/5">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-amber-400">Jour</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{formatHoursDisplay(stats.dayHours)}<span className="ml-0.5 text-sm font-normal text-muted-foreground">h</span></p>
+          </CardContent>
+        </Card>
+        <Card className="border-blue-800/30 bg-blue-500/5">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-blue-400">Nuit</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{formatHoursDisplay(stats.nightHours)}<span className="ml-0.5 text-sm font-normal text-muted-foreground">h</span></p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Missions</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">{stats.shiftCount}</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Totaux - 2 décimales, très simple */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-lg border border-border bg-card px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</p>
-          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.totalHours)} h</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Jour</p>
-          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.dayHours)} h</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Nuit</p>
-          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.nightHours)} h</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Missions</p>
-          <p className="text-lg font-semibold text-foreground">{stats.shiftCount}</p>
-        </div>
-      </div>
-
-      {/* Export + Table */}
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={exportCSV} className="gap-1.5 text-muted-foreground">
-            <Download className="h-3.5 w-3.5" />
-            CSV
-          </Button>
-        </div>
-        <Card className="overflow-hidden">
+      {/* Table */}
+      <Card className="overflow-hidden border-border/60">
           <CardContent className="p-0">
             {myShifts.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
@@ -271,7 +284,6 @@ export function AgentHours() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   )
 }

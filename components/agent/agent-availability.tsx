@@ -169,58 +169,68 @@ export function AgentAvailability() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Mes Disponibilites</h1>
-        <p className="text-sm text-muted-foreground">
-          Declarez vos disponibilites pour le mois suivant
-        </p>
-      </div>
+    <div className="flex flex-col gap-5">
+      {/* Header card */}
+      <Card className="border-border/60">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Mes disponibilités</h1>
+              <p className="text-xs text-muted-foreground">
+                Déclarez vos disponibilités pour le mois suivant
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth((d) => addMonths(d, -1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="min-w-[130px] text-center text-sm font-semibold capitalize text-foreground">
+                {format(currentMonth, "MMMM yyyy", { locale: fr })}
+              </span>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth((d) => addMonths(d, 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Info Banner */}
-      <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        <div className="text-sm text-foreground">
-          <p className="font-medium">Comment declarer vos disponibilites :</p>
-          <p className="mt-1 text-muted-foreground">
-            Cliquez sur un jour pour le marquer comme indisponible (rouge) ou disponible (vert).
-            Les disponibilites doivent etre saisies avant le 20 du mois precedent.
-          </p>
-          {isPastDeadline && (
-            <p className="mt-1 font-medium text-warning">
-              Date limite depassee pour ce mois.
-            </p>
-          )}
-        </div>
-      </div>
+      {/* Info + Summary */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="flex items-start gap-3 p-4">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <div className="text-xs text-muted-foreground">
+            Cliquez sur un jour pour le marquer indisponible (rouge) ou disponible (vert).
+            Saisie avant le 20 du mois précédent.
+            {isPastDeadline && (
+              <span className="ml-1 font-medium text-warning">Date limite dépassée.</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Month Navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="outline" size="icon" onClick={() => setCurrentMonth((d) => addMonths(d, -1))}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="text-sm font-semibold text-foreground capitalize">
-          {format(currentMonth, "MMMM yyyy", { locale: fr })}
-        </span>
-        <Button variant="outline" size="icon" onClick={() => setCurrentMonth((d) => addMonths(d, 1))}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Summary */}
-      <div className="flex gap-4">
-        <Badge variant="secondary" className="gap-1.5 px-3 py-1.5">
-          <div className="h-2 w-2 rounded-full bg-success" />
-          {availableCount} jours disponibles
-        </Badge>
-        <Badge variant="secondary" className="gap-1.5 px-3 py-1.5">
-          <div className="h-2 w-2 rounded-full bg-destructive" />
-          {unavailableCount} jours indisponibles
-        </Badge>
+      {/* Summary badges */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="border-green-800/30 bg-green-500/5">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-success" />
+              <span className="text-xs text-muted-foreground">{availableCount} disponibles</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-red-800/30 bg-red-500/5">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-destructive" />
+              <span className="text-xs text-muted-foreground">{unavailableCount} indisponibles</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Calendar Grid */}
-      <Card>
+      <Card className="border-border/60">
         <CardContent className="p-4">
           <div className="grid grid-cols-7 gap-1">
             {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((d) => (
@@ -263,16 +273,16 @@ export function AgentAvailability() {
         </CardContent>
       </Card>
 
-      {/* Save Button */}
+      {/* Save */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} className="gap-2">
+        <Button onClick={handleSave} size="sm" className="h-8 gap-1.5 text-xs">
           {saved ? (
             <>
-              <Check className="h-4 w-4" />
-              Enregistre
+              <Check className="h-3.5 w-3.5" />
+              Enregistré
             </>
           ) : (
-            "Enregistrer mes disponibilites"
+            "Enregistrer"
           )}
         </Button>
       </div>

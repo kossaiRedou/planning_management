@@ -331,61 +331,69 @@ export function AdminPlanning() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Planificateur</h1>
-          <p className="text-sm text-muted-foreground">
-            Assignez les missions aux agents
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => setShowExportPdfDialog(true)}>
-            <FileDown className="h-4 w-4" />
-            Exporter en PDF
-          </Button>
-          <Button
-            onClick={handlePublish}
-            className="gap-2"
-            disabled={published || isWeekPublished || shifts.length === 0}
-          >
-            {(published || isWeekPublished) ? (
-              <>
-                <Check className="h-4 w-4" />
-                Publié
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4" />
-                Publier le planning
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+    <div className="flex flex-col gap-5">
+      {/* Header card */}
+      <Card className="border-border/60">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Planificateur</h1>
+              <p className="text-xs text-muted-foreground">
+                Assignez les missions aux agents
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => setShowExportPdfDialog(true)}>
+                <FileDown className="h-3.5 w-3.5" />
+                PDF
+              </Button>
+              <Button
+                onClick={handlePublish}
+                size="sm"
+                className="h-8 gap-1.5 text-xs"
+                disabled={published || isWeekPublished || shifts.length === 0}
+              >
+                {(published || isWeekPublished) ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" />
+                    Publié
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-3.5 w-3.5" />
+                    Publier
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Week Navigation */}
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" onClick={() => { setCurrentDate((d) => addWeeks(d, -1)); setPublished(false) }}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="min-w-56 text-center text-sm font-semibold text-foreground">
-          Semaine du {format(weekStart, "d MMM", { locale: fr })} au{" "}
-          {format(weekEnd, "d MMM yyyy", { locale: fr })}
-        </span>
-        <Button variant="outline" size="icon" onClick={() => { setCurrentDate((d) => addWeeks(d, 1)); setPublished(false) }}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        {(isWeekPublished || published) && (
-          <Badge className="ml-2 gap-1 border-green-800 bg-green-500/10 text-green-400 hover:bg-green-500/10">
-            <Check className="h-3 w-3" />
-            Publié
-          </Badge>
-        )}
-      </div>
+      {/* Navigation semaine */}
+      <Card className="border-border/60">
+        <CardContent className="flex flex-wrap items-center justify-center gap-3 p-3">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setCurrentDate((d) => addWeeks(d, -1)); setPublished(false) }}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="min-w-52 text-center text-sm font-semibold text-foreground">
+            Semaine du {format(weekStart, "d MMM", { locale: fr })} au{" "}
+            {format(weekEnd, "d MMM yyyy", { locale: fr })}
+          </span>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => { setCurrentDate((d) => addWeeks(d, 1)); setPublished(false) }}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          {(isWeekPublished || published) && (
+            <Badge className="gap-1 border-green-800 bg-green-500/10 text-green-400 hover:bg-green-500/10">
+              <Check className="h-3 w-3" />
+              Publié
+            </Badge>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Planning Grid */}
-      <Card>
+      <Card className="border-border/60">
         <CardContent className="p-0">
           <ScrollArea className="w-full">
             <div className="min-w-[800px]">
@@ -555,21 +563,23 @@ export function AdminPlanning() {
         </CardContent>
       </Card>
 
-      {/* Legend - code couleur par type */}
-      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-amber-700 bg-amber-500/10" />
-          <span>Mission de jour</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-blue-700 bg-blue-500/10" />
-          <span>Mission de nuit</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-red-800 bg-red-500/10" />
-          <span>Agent indisponible</span>
-        </div>
-      </div>
+      {/* Legend */}
+      <Card className="border-border/60">
+        <CardContent className="flex flex-wrap gap-4 p-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded border border-amber-700 bg-amber-500/10" />
+            <span>Jour</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded border border-blue-700 bg-blue-500/10" />
+            <span>Nuit</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 w-3 rounded border border-red-800 bg-red-500/10" />
+            <span>Indisponible</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Export PDF Dialog */}
       <Dialog open={showExportPdfDialog} onOpenChange={setShowExportPdfDialog}>

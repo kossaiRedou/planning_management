@@ -322,48 +322,50 @@ export function AdminProfiles() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-            <Image src="/logowithoutBG.png" alt="ShiftMe" width={40} height={40} />
+    <div className="flex flex-col gap-5">
+      {/* Header card */}
+      <Card className="border-border/60">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Profils</h1>
+              <p className="text-xs text-muted-foreground">
+                Gérez vos agents et vos sites clients
+              </p>
+            </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 pl-9 text-xs"
+              />
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Gestion des Profils</h1>
-            <p className="text-sm text-muted-foreground">
-              Gerez vos agents et vos sites clients
-            </p>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un agent ou un site..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="agents">
-        <TabsList>
-          <TabsTrigger value="agents" className="gap-2">
-            Agents ({agents.length})
-          </TabsTrigger>
-          <TabsTrigger value="sites" className="gap-2">
-            Sites ({sites.length})
-          </TabsTrigger>
-        </TabsList>
+        <Card className="border-border/60">
+          <CardContent className="flex items-center justify-between p-3">
+            <TabsList>
+              <TabsTrigger value="agents" className="gap-2 text-xs">
+                Agents ({agents.length})
+              </TabsTrigger>
+              <TabsTrigger value="sites" className="gap-2 text-xs">
+                Sites ({sites.length})
+              </TabsTrigger>
+            </TabsList>
+          </CardContent>
+        </Card>
 
         {/* Agents Tab */}
         <TabsContent value="agents" className="mt-4">
           <div className="flex flex-col gap-4">
             <div className="flex justify-end">
-              <Button onClick={() => setShowAddAgent(true)} className="gap-2">
-                <UserPlus className="h-4 w-4" />
+              <Button onClick={() => setShowAddAgent(true)} size="sm" className="h-8 gap-1.5 text-xs">
+                <UserPlus className="h-3.5 w-3.5" />
                 Ajouter un agent
               </Button>
             </div>
@@ -435,8 +437,8 @@ export function AdminProfiles() {
         <TabsContent value="sites" className="mt-4">
           <div className="flex flex-col gap-4">
             <div className="flex justify-end">
-              <Button onClick={() => setShowAddSite(true)} className="gap-2">
-                <Building2 className="h-4 w-4" />
+              <Button onClick={() => setShowAddSite(true)} size="sm" className="h-8 gap-1.5 text-xs">
+                <Building2 className="h-3.5 w-3.5" />
                 Ajouter un site
               </Button>
             </div>
