@@ -6,35 +6,31 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
+  // Refresh the session -- this validates the token and refreshes cookies
   const {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Public routes that don't require authentication
   const publicRoutes = ['/', '/login', '/signup']
-  const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname)
+  const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname) ||
+    req.nextUrl.pathname.startsWith('/signup/')
 
-  // API routes and webhooks should pass through
   if (req.nextUrl.pathname.startsWith('/api/')) {
     return res
   }
 
-  // If not authenticated and trying to access protected route, redirect to login
   if (!session && !isPublicRoute) {
     const redirectUrl = new URL('/login', req.url)
     redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If authenticated, check user profile and subscription status
   if (session) {
-    // Allow access to billing page even if subscription is inactive
     if (req.nextUrl.pathname.startsWith('/settings/billing')) {
       return res
     }
 
     try {
-      // Fetch user profile
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('organization_id')
@@ -42,14 +38,12 @@ export async function middleware(req: NextRequest) {
         .single()
 
       if (profile) {
-        // Fetch organization to check subscription status
         const { data: org } = await supabase
           .from('organizations')
           .select('subscription_status')
           .eq('id', profile.organization_id)
           .single()
 
-        // If subscription is not active or trialing, redirect to billing
         if (org && !['active', 'trialing'].includes(org.subscription_status)) {
           if (!req.nextUrl.pathname.startsWith('/settings')) {
             return NextResponse.redirect(new URL('/settings/billing', req.url))
@@ -60,9 +54,8 @@ export async function middleware(req: NextRequest) {
       console.error('Middleware error:', error)
     }
 
-    // If authenticated and trying to access login/signup, redirect to home
     if (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/signup') {
-      return NextResponse.redirect(new URL('/', req.url))
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
   }
 

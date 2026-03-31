@@ -8,3 +8,7 @@ export function createClient() {
   clientInstance = createClientComponentClient<Database>()
   return clientInstance
 }
+
+export function resetClient() {
+  clientInstance = null
+}

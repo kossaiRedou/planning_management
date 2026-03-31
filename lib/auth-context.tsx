@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
-import { createClient } from "./supabase/client"
+import { createClient, resetClient } from "./supabase/client"
 import type { User, Organization } from "./types"
 import type { Session } from "@supabase/supabase-js"
 
@@ -205,10 +205,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchUserProfile])
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut()
+    await supabase.auth.signOut({ scope: 'local' })
     setUser(null)
     setOrganization(null)
     setSession(null)
+    resetClient()
+    window.location.href = '/login'
   }, [supabase])
 
   return (
