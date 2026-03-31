@@ -227,9 +227,24 @@ export function AdminPlanning() {
     }
   }
 
-  function handlePublish() {
+  const isWeekPublished = useMemo(() => {
+    if (shifts.length === 0) return false
+    return shifts.every((s) => s.status === 'scheduled' || s.status === 'completed')
+  }, [shifts])
+
+  async function handlePublish() {
+    if (!organization || shifts.length === 0) return
     setPublished(true)
-    setTimeout(() => setPublished(false), 3000)
+    try {
+      const shiftIds = shifts.map((s) => s.id)
+      await supabase
+        .from('shifts')
+        .update({ status: 'scheduled' })
+        .in('id', shiftIds)
+      setShifts((prev) => prev.map((s) => ({ ...s, status: 'scheduled' as const })))
+    } catch {
+      setPublished(false)
+    }
   }
 
   async function handleExportPdf() {
@@ -332,12 +347,12 @@ export function AdminPlanning() {
           <Button
             onClick={handlePublish}
             className="gap-2"
-            disabled={published}
+            disabled={published || isWeekPublished || shifts.length === 0}
           >
-            {published ? (
+            {(published || isWeekPublished) ? (
               <>
                 <Check className="h-4 w-4" />
-                Planning publie
+                Publié
               </>
             ) : (
               <>
@@ -351,16 +366,22 @@ export function AdminPlanning() {
 
       {/* Week Navigation */}
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" onClick={() => setCurrentDate((d) => addWeeks(d, -1))}>
+        <Button variant="outline" size="icon" onClick={() => { setCurrentDate((d) => addWeeks(d, -1)); setPublished(false) }}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <span className="min-w-56 text-center text-sm font-semibold text-foreground">
           Semaine du {format(weekStart, "d MMM", { locale: fr })} au{" "}
           {format(weekEnd, "d MMM yyyy", { locale: fr })}
         </span>
-        <Button variant="outline" size="icon" onClick={() => setCurrentDate((d) => addWeeks(d, 1))}>
+        <Button variant="outline" size="icon" onClick={() => { setCurrentDate((d) => addWeeks(d, 1)); setPublished(false) }}>
           <ChevronRight className="h-4 w-4" />
         </Button>
+        {(isWeekPublished || published) && (
+          <Badge className="ml-2 gap-1 border-green-200 bg-green-50 text-green-700 hover:bg-green-50">
+            <Check className="h-3 w-3" />
+            Publié
+          </Badge>
+        )}
       </div>
 
       {/* Planning Grid */}
