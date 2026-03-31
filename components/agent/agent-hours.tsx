@@ -154,7 +154,7 @@ export function AgentHours() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-lg font-semibold text-[#222222]">Heures</h1>
+      <h1 className="text-lg font-semibold text-foreground">Heures</h1>
 
       {/* Filtre Mois / Semaine + Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -182,7 +182,7 @@ export function AgentHours() {
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="min-w-[140px] text-center text-sm font-medium capitalize text-[#222222]">
+          <span className="min-w-[140px] text-center text-sm font-medium capitalize text-foreground">
             {periodLabel}
           </span>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(1)}>
@@ -193,28 +193,28 @@ export function AgentHours() {
 
       {/* Totaux - 2 décimales, très simple */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-lg border border-border bg-white px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-[#555555]">Total</p>
-          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.totalHours)} h</p>
+        <div className="rounded-lg border border-border bg-card px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</p>
+          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.totalHours)} h</p>
         </div>
-        <div className="rounded-lg border border-border bg-white px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-[#555555]">Jour</p>
-          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.dayHours)} h</p>
+        <div className="rounded-lg border border-border bg-card px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Jour</p>
+          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.dayHours)} h</p>
         </div>
-        <div className="rounded-lg border border-border bg-white px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-[#555555]">Nuit</p>
-          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.nightHours)} h</p>
+        <div className="rounded-lg border border-border bg-card px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Nuit</p>
+          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.nightHours)} h</p>
         </div>
-        <div className="rounded-lg border border-border bg-white px-3 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-[#555555]">Missions</p>
-          <p className="text-lg font-semibold text-[#222222]">{stats.shiftCount}</p>
+        <div className="rounded-lg border border-border bg-card px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Missions</p>
+          <p className="text-lg font-semibold text-foreground">{stats.shiftCount}</p>
         </div>
       </div>
 
       {/* Export + Table */}
       <div className="flex flex-col gap-3">
         <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={exportCSV} className="gap-1.5 text-[#555555]">
+          <Button variant="ghost" size="sm" onClick={exportCSV} className="gap-1.5 text-muted-foreground">
             <Download className="h-3.5 w-3.5" />
             CSV
           </Button>
@@ -222,18 +222,18 @@ export function AgentHours() {
         <Card className="overflow-hidden">
           <CardContent className="p-0">
             {myShifts.length === 0 ? (
-              <p className="py-10 text-center text-sm text-[#555555]">
+              <p className="py-10 text-center text-sm text-muted-foreground">
                 {period === "month" ? "Aucune mission ce mois-ci." : "Aucune mission cette semaine."}
               </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="border-b border-border hover:bg-transparent">
-                    <TableHead className="text-xs font-medium text-[#555555]">Date</TableHead>
-                    <TableHead className="text-xs font-medium text-[#555555]">Horaires</TableHead>
-                    <TableHead className="hidden text-xs font-medium text-[#555555] sm:table-cell">Site</TableHead>
-                    <TableHead className="text-xs font-medium text-[#555555]">Duree</TableHead>
-                    <TableHead className="text-xs font-medium text-[#555555]">Type</TableHead>
+                    <TableHead className="text-xs font-medium text-muted-foreground">Date</TableHead>
+                    <TableHead className="text-xs font-medium text-muted-foreground">Horaires</TableHead>
+                    <TableHead className="hidden text-xs font-medium text-muted-foreground sm:table-cell">Site</TableHead>
+                    <TableHead className="text-xs font-medium text-muted-foreground">Duree</TableHead>
+                    <TableHead className="text-xs font-medium text-muted-foreground">Type</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -242,25 +242,25 @@ export function AgentHours() {
                     const duration = getShiftDurationHours(shift)
                     return (
                       <TableRow key={shift.id} className="border-b border-border/50">
-                        <TableCell className="text-sm text-[#222222]">
+                        <TableCell className="text-sm text-foreground">
                           {format(parseISO(shift.date), "EEE d MMM", { locale: fr })}
                         </TableCell>
-                        <TableCell className="text-sm font-medium text-[#222222]">
+                        <TableCell className="text-sm font-medium text-foreground">
                           {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
                         </TableCell>
-                        <TableCell className="hidden text-sm text-[#555555] sm:table-cell">
+                        <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
                           {site?.name}
                         </TableCell>
-                        <TableCell className="text-sm font-medium text-[#222222]">
+                        <TableCell className="text-sm font-medium text-foreground">
                           {formatHoursDisplay(duration)} h
                         </TableCell>
                         <TableCell>
                           {shift.isNight ? (
-                            <Badge className="border border-[#B8D4F0] bg-[#E3F0FF] text-[#1A3A8A] hover:bg-[#E3F0FF]">Nuit</Badge>
+                            <Badge className="border border-blue-700 bg-blue-500/10 text-blue-300 hover:bg-blue-500/15">Nuit</Badge>
                           ) : shift.isSunday ? (
                             <Badge className="bg-warning/10 text-warning hover:bg-warning/10">Dim.</Badge>
                           ) : (
-                            <Badge className="border border-[#E8E0B8] bg-[#FFF8D6] text-[#222222] hover:bg-[#FFF8D6]">Jour</Badge>
+                            <Badge className="border border-amber-700 bg-amber-500/10 text-foreground hover:bg-amber-500/15">Jour</Badge>
                           )}
                         </TableCell>
                       </TableRow>

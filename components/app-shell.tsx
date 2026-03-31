@@ -116,7 +116,7 @@ export function AppShell({ children, navItems, activeTab, onTabChange }: AppShel
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card">
+      <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="flex h-14 items-center justify-between px-4 lg:px-6">
           {/* Left: Organisation branding */}
           <div className="flex items-center gap-2.5">
@@ -215,10 +215,10 @@ export function AppShell({ children, navItems, activeTab, onTabChange }: AppShel
 
           {pwSuccess ? (
             <div className="flex flex-col items-center gap-2 py-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <KeyRound className="h-6 w-6 text-green-600" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/15">
+                <KeyRound className="h-6 w-6 text-green-400" />
               </div>
-              <p className="text-sm font-medium text-green-700">Mot de passe modifié avec succès</p>
+              <p className="text-sm font-medium text-green-400">Mot de passe modifié avec succès</p>
             </div>
           ) : (
             <div className="grid gap-4 py-2">

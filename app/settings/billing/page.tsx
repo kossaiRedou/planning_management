@@ -128,7 +128,7 @@ function BillingPageContent() {
           </div>
 
           {organization.trial_ends_at && organization.subscription_status === 'trialing' && (
-            <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900">
+            <div className="rounded-lg bg-primary/10 p-4 text-sm text-primary">
               <AlertCircle className="inline h-4 w-4 mr-2" />
               Votre période d'essai se termine le{' '}
               {new Date(organization.trial_ends_at).toLocaleDateString('fr-FR')}

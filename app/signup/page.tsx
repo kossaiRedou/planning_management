@@ -113,9 +113,9 @@ function SignupForm() {
         </div>
 
         {canceledMessage && (
-          <Alert variant="default" className="mb-6 border-yellow-200 bg-yellow-50">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800">
+          <Alert variant="default" className="mb-6 border-yellow-800 bg-yellow-500/10">
+            <AlertCircle className="h-4 w-4 text-yellow-400" />
+            <AlertDescription className="text-yellow-300">
               Paiement annulé. Vous pouvez reprendre l&apos;inscription à tout moment.
             </AlertDescription>
           </Alert>

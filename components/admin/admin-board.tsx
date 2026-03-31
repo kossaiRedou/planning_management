@@ -237,7 +237,7 @@ export function AdminBoard() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-[#222222]">Tableau de bord</h1>
+        <h1 className="text-lg font-semibold text-foreground">Tableau de bord</h1>
         {shifts.length > 0 && (
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
@@ -256,7 +256,7 @@ export function AdminBoard() {
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Select value={agentId || "all"} onValueChange={(v) => setAgentId(v === "all" ? "" : v)}>
-            <SelectTrigger className="h-9 w-[160px] border-[#E5E5E5] bg-white text-sm text-[#222222]">
+            <SelectTrigger className="h-9 w-[160px] border-border bg-card text-sm text-foreground">
               <SelectValue placeholder="Agent" />
             </SelectTrigger>
             <SelectContent>
@@ -269,7 +269,7 @@ export function AdminBoard() {
             </SelectContent>
           </Select>
           <Select value={siteId || "all"} onValueChange={(v) => setSiteId(v === "all" ? "" : v)}>
-            <SelectTrigger className="h-9 w-[160px] border-[#E5E5E5] bg-white text-sm text-[#222222]">
+            <SelectTrigger className="h-9 w-[160px] border-border bg-card text-sm text-foreground">
               <SelectValue placeholder="Site" />
             </SelectTrigger>
             <SelectContent>
@@ -307,7 +307,7 @@ export function AdminBoard() {
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="min-w-[140px] text-center text-sm font-medium capitalize text-[#222222]">
+            <span className="min-w-[140px] text-center text-sm font-medium capitalize text-foreground">
               {periodLabel}
             </span>
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigatePeriod(1)}>
@@ -319,21 +319,21 @@ export function AdminBoard() {
 
       {/* Totaux - 2 décimales, un peu colorés */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-lg border border-[#E0ECFF] bg-[#F2F7FF] px-3 py-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-[#1A3A8A]">Total</p>
-          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.totalHours)} h</p>
+        <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-blue-300">Total</p>
+          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.totalHours)} h</p>
         </div>
-        <div className="rounded-lg border border-[#E8E0B8] bg-[#FFF8D6] px-3 py-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-[#8B6914]">Jour</p>
-          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.dayHours)} h</p>
+        <div className="rounded-lg border border-amber-700 bg-amber-500/10 px-3 py-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-amber-300">Jour</p>
+          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.dayHours)} h</p>
         </div>
-        <div className="rounded-lg border border-[#B8D4F0] bg-[#E3F0FF] px-3 py-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-[#1A3A8A]">Nuit</p>
-          <p className="text-lg font-semibold text-[#222222]">{formatHoursDisplay(stats.nightHours)} h</p>
+        <div className="rounded-lg border border-blue-700 bg-blue-500/10 px-3 py-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-blue-300">Nuit</p>
+          <p className="text-lg font-semibold text-foreground">{formatHoursDisplay(stats.nightHours)} h</p>
         </div>
-        <div className="rounded-lg border border-[#E5E5E5] bg-[#FAFAFA] px-3 py-2">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-[#555555]">Missions</p>
-          <p className="text-lg font-semibold text-[#222222]">{stats.shiftCount}</p>
+        <div className="rounded-lg border border-border bg-muted/50 px-3 py-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Missions</p>
+          <p className="text-lg font-semibold text-foreground">{stats.shiftCount}</p>
         </div>
       </div>
 
@@ -341,19 +341,19 @@ export function AdminBoard() {
       <Card className="overflow-hidden">
         <CardContent className="p-0">
           {isLoading ? (
-            <p className="py-10 text-center text-sm text-[#555555]">Chargement…</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">Chargement…</p>
           ) : shifts.length === 0 ? (
-            <p className="py-10 text-center text-sm text-[#555555]">Aucune mission sur la période.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">Aucune mission sur la période.</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-border hover:bg-transparent">
-                  <TableHead className="text-xs font-medium text-[#555555]">Date</TableHead>
-                  <TableHead className="text-xs font-medium text-[#555555]">Agent</TableHead>
-                  <TableHead className="text-xs font-medium text-[#555555]">Site</TableHead>
-                  <TableHead className="text-xs font-medium text-[#555555]">Horaires</TableHead>
-                  <TableHead className="text-xs font-medium text-[#555555]">Duree</TableHead>
-                  <TableHead className="text-xs font-medium text-[#555555]">Type</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Date</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Agent</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Site</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Horaires</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Duree</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Type</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -363,28 +363,28 @@ export function AdminBoard() {
                   const duration = getShiftDurationHours(shift)
                   return (
                     <TableRow key={shift.id} className="border-b border-border/50">
-                      <TableCell className="text-sm text-[#222222]">
+                      <TableCell className="text-sm text-foreground">
                         {format(parseISO(shift.date), "EEE d MMM", { locale: fr })}
                       </TableCell>
-                      <TableCell className="text-sm font-medium text-[#222222]">
+                      <TableCell className="text-sm font-medium text-foreground">
                         {agent ? `${agent.firstName} ${agent.lastName}` : "—"}
                       </TableCell>
-                      <TableCell className="text-sm text-[#555555]">{site?.name ?? "—"}</TableCell>
-                      <TableCell className="text-sm font-medium text-[#222222]">
+                      <TableCell className="text-sm text-muted-foreground">{site?.name ?? "—"}</TableCell>
+                      <TableCell className="text-sm font-medium text-foreground">
                         {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
                       </TableCell>
-                      <TableCell className="text-sm font-medium text-[#222222]">
+                      <TableCell className="text-sm font-medium text-foreground">
                         {formatHoursDisplay(duration)} h
                       </TableCell>
                       <TableCell>
                         {shift.isNight ? (
-                          <Badge className="border border-[#B8D4F0] bg-[#E3F0FF] text-[#1A3A8A] hover:bg-[#E3F0FF]">
+                          <Badge className="border border-blue-700 bg-blue-500/10 text-blue-300 hover:bg-blue-500/15">
                             Nuit
                           </Badge>
                         ) : shift.isSunday ? (
                           <Badge className="bg-warning/10 text-warning hover:bg-warning/10">Dim.</Badge>
                         ) : (
-                          <Badge className="border border-[#E8E0B8] bg-[#FFF8D6] text-[#222222] hover:bg-[#FFF8D6]">
+                          <Badge className="border border-amber-700 bg-amber-500/10 text-foreground hover:bg-amber-500/15">
                             Jour
                           </Badge>
                         )}

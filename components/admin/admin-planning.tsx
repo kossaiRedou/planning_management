@@ -377,7 +377,7 @@ export function AdminPlanning() {
           <ChevronRight className="h-4 w-4" />
         </Button>
         {(isWeekPublished || published) && (
-          <Badge className="ml-2 gap-1 border-green-200 bg-green-50 text-green-700 hover:bg-green-50">
+          <Badge className="ml-2 gap-1 border-green-800 bg-green-500/10 text-green-400 hover:bg-green-500/10">
             <Check className="h-3 w-3" />
             Publié
           </Badge>
@@ -391,8 +391,8 @@ export function AdminPlanning() {
             <div className="min-w-[800px]">
               {/* Header row - en-tête jours sur fond bleu */}
               <div className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-b border-border">
-                <div className="flex items-center border-r border-border bg-[#FAFAFA] px-4 py-3">
-                  <span className="text-xs font-semibold uppercase text-[#222222]">
+                <div className="flex items-center border-r border-border bg-muted/50 px-4 py-3">
+                  <span className="text-xs font-semibold uppercase text-foreground">
                     Agent
                   </span>
                 </div>
@@ -402,7 +402,7 @@ export function AdminPlanning() {
                     <div
                       key={day.toISOString()}
                       className={`flex flex-col items-center border-r border-border px-2 py-3 ${
-                        today ? "bg-[#2563eb]" : "bg-[#2C5BD3]"
+                        today ? "bg-primary/90" : "bg-primary/70"
                       }`}
                     >
                       <span className="text-xs font-medium capitalize text-white/90">
@@ -414,8 +414,8 @@ export function AdminPlanning() {
                     </div>
                   )
                 })}
-                <div className="flex items-center justify-center bg-[#EDEDED] px-4 py-3">
-                  <span className="text-xs font-semibold uppercase text-[#222222]">
+                <div className="flex items-center justify-center bg-muted px-4 py-3">
+                  <span className="text-xs font-semibold uppercase text-foreground">
                     Total
                   </span>
                 </div>
@@ -426,16 +426,16 @@ export function AdminPlanning() {
                 <div
                   key={agent.id}
                   className={`grid grid-cols-[200px_repeat(7,1fr)_120px] border-b border-border last:border-b-0 ${
-                    agentIndex % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
+                    agentIndex % 2 === 0 ? "bg-card" : "bg-muted/50"
                   }`}
                 >
                   <div className="flex items-center gap-2 border-r border-border px-4 py-3">
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-[#222222]">
+                      <span className="text-sm font-medium text-foreground">
                         {agent.firstName} {agent.lastName}
                       </span>
                       <span
-                        className="text-xs text-[#555555]"
+                        className="text-xs text-muted-foreground"
                         title={`Valeur exacte: ${agentWeekHours[agent.id] ?? 0} h`}
                       >
                         {formatHoursDisplay(agentWeekHours[agent.id] || 0)} h / semaine
@@ -452,8 +452,8 @@ export function AdminPlanning() {
                       <div
                         key={dateStr}
                         className={`group relative flex min-h-[72px] flex-col gap-1 border-r border-border p-1.5 ${
-                          today ? "bg-[#F2F7FF]" : ""
-                        } ${unavailable ? "bg-[#FFE5E5]" : ""}`}
+                          today ? "bg-primary/5" : ""
+                        } ${unavailable ? "bg-red-500/10" : ""}`}
                       >
                         {unavailable && (
                           <div className="absolute right-1 top-1">
@@ -470,19 +470,19 @@ export function AdminPlanning() {
                               onClick={() => removeShift(shift.id)}
                               className={`rounded border px-1.5 py-1 text-left text-xs transition-colors hover:opacity-90 ${
                                 shift.isNight
-                                  ? "border-[#B8D4F0] bg-[#E3F0FF] text-[#222222]"
-                                  : "border-[#E8E0B8] bg-[#FFF8D6] text-[#222222]"
+                                  ? "border-blue-700 bg-blue-500/10 text-foreground"
+                                  : "border-amber-700 bg-amber-500/10 text-foreground"
                               }`}
                               title={`Cliquer pour supprimer - ${site?.name} (${durationHours} h)`}
                             >
-                              <div className="font-bold leading-tight text-[#222222]">
+                              <div className="font-bold leading-tight text-foreground">
                                 {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
                               </div>
-                              <div className="truncate text-[11px] text-[#555555]">
+                              <div className="truncate text-[11px] text-muted-foreground">
                                 {site?.name}
                               </div>
                               <div className="mt-0.5 flex justify-end">
-                                <span className="rounded px-1 py-0.5 text-[10px] font-medium bg-[#E0ECFF] text-[#1A3A8A]">
+                                <span className="rounded px-1 py-0.5 text-[10px] font-medium bg-primary/15 text-blue-300">
                                   {formatHoursDisplay(durationHours)} h
                                 </span>
                               </div>
@@ -500,9 +500,9 @@ export function AdminPlanning() {
                     )
                   })}
                   {/* Total column for this agent - fond distinct */}
-                  <div className="flex items-center justify-center bg-[#EDEDED] px-4 py-3">
+                  <div className="flex items-center justify-center bg-muted px-4 py-3">
                     <span
-                      className="text-base font-semibold text-[#222222]"
+                      className="text-base font-semibold text-foreground"
                       title={`Valeur exacte: ${agentWeekHours[agent.id] ?? 0} h`}
                     >
                       {formatHoursDisplay(agentWeekHours[agent.id] || 0)} h
@@ -512,9 +512,9 @@ export function AdminPlanning() {
               ))}
 
               {/* Totals row (by day) - accent sur les totaux */}
-              <div className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-t-2 border-[#E5E5E5] bg-[#FAFAFA]">
+              <div className="grid grid-cols-[200px_repeat(7,1fr)_120px] border-t-2 border-border bg-muted/50">
                 <div className="flex items-center border-r border-border px-4 py-3">
-                  <span className="text-sm font-semibold uppercase text-[#222222]">
+                  <span className="text-sm font-semibold uppercase text-foreground">
                     Total par jour
                   </span>
                 </div>
@@ -527,11 +527,11 @@ export function AdminPlanning() {
                     <div
                       key={dateStr}
                       className={`flex items-center justify-center border-r border-border px-2 py-3 ${
-                        today ? "bg-[#E0ECFF]" : ""
+                        today ? "bg-primary/15" : ""
                       }`}
                     >
                       <span
-                        className="text-base font-semibold text-[#222222]"
+                        className="text-base font-semibold text-foreground"
                         title={`Valeur exacte: ${totalHours} h`}
                       >
                         {formatHoursDisplay(totalHours)} h
@@ -540,9 +540,9 @@ export function AdminPlanning() {
                   )
                 })}
                 {/* Grand total */}
-                <div className="flex items-center justify-center bg-[#EDEDED] px-4 py-3">
+                <div className="flex items-center justify-center bg-muted px-4 py-3">
                   <span
-                    className="text-lg font-bold text-[#222222]"
+                    className="text-lg font-bold text-foreground"
                     title={`Valeur exacte: ${grandTotal} h`}
                   >
                     {formatHoursDisplay(grandTotal)} h
@@ -556,17 +556,17 @@ export function AdminPlanning() {
       </Card>
 
       {/* Legend - code couleur par type */}
-      <div className="flex flex-wrap gap-4 text-xs text-[#555555]">
+      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-[#E8E0B8] bg-[#FFF8D6]" />
+          <div className="h-3 w-3 rounded border border-amber-700 bg-amber-500/10" />
           <span>Mission de jour</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-[#B8D4F0] bg-[#E3F0FF]" />
+          <div className="h-3 w-3 rounded border border-blue-700 bg-blue-500/10" />
           <span>Mission de nuit</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="h-3 w-3 rounded border border-red-200 bg-[#FFE5E5]" />
+          <div className="h-3 w-3 rounded border border-red-800 bg-red-500/10" />
           <span>Agent indisponible</span>
         </div>
       </div>

@@ -67,8 +67,8 @@ function SuccessContent() {
       <div className="w-full max-w-2xl space-y-6">
         {/* Success Icon */}
         <div className="flex justify-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="h-12 w-12 text-green-600" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/15">
+            <CheckCircle2 className="h-12 w-12 text-green-400" />
           </div>
         </div>
 
@@ -84,14 +84,14 @@ function SuccessContent() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Trial Info */}
-            <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900">
+            <div className="rounded-lg bg-primary/10 p-4 text-sm text-primary">
               <div className="flex items-start gap-3">
                 <Shield className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-semibold mb-1">
                     Période d'essai de 14 jours activée
                   </p>
-                  <p className="text-blue-800">
+                  <p className="text-primary/80">
                     Profitez de toutes les fonctionnalités gratuitement pendant 14 jours.
                     Aucun paiement ne sera effectué avant la fin de la période d'essai.
                   </p>

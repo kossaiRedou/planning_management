@@ -175,18 +175,18 @@ export function AgentPlanning() {
               <Card
                 key={day.toISOString()}
                 className={`cursor-pointer transition-colors hover:opacity-95 ${
-                  !isRest ? "bg-[#F2F7FF]" : "bg-[#E8F8EC]"
+                  !isRest ? "bg-primary/5" : "bg-green-500/5"
                 } ${today ? "ring-2 ring-[#2C5BD3]" : ""} ${
                   selectedDay && isSameDay(day, selectedDay) ? "ring-2 ring-[#2C5BD3]" : ""
                 }`}
                 onClick={() => setSelectedDay(day)}
               >
                 <CardContent className="flex items-center gap-4 p-3 sm:p-4">
-                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-[#222222]/5">
-                    <span className="text-xs font-bold capitalize text-[#222222]">
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-muted">
+                    <span className="text-xs font-bold capitalize text-foreground">
                       {format(day, "EEE", { locale: fr })}
                     </span>
-                    <span className="text-sm font-medium leading-none text-[#555555]">
+                    <span className="text-sm font-medium leading-none text-muted-foreground">
                       {format(day, "d")}
                     </span>
                   </div>
@@ -198,13 +198,13 @@ export function AgentPlanning() {
                           const durationHours = getShiftDurationHours(shift)
                           return (
                             <div key={shift.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                              <span className="text-sm font-bold text-[#222222]">
+                              <span className="text-sm font-bold text-foreground">
                                 {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
                               </span>
-                              <span className="text-xs text-[#666666]">
+                              <span className="text-xs text-muted-foreground">
                                 {site?.name}
                               </span>
-                              <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-[#E3F0FF] text-[#1A3A8A]">
+                              <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-blue-500/10 text-blue-300">
                                 {formatHoursDisplay(durationHours)} h
                               </span>
                             </div>
@@ -213,14 +213,14 @@ export function AgentPlanning() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-1.5">
-                        <Check className="h-4 w-4 shrink-0 text-[#1E6B3A]" />
-                        <span className="text-sm font-medium text-[#1E6B3A]">Repos</span>
+                        <Check className="h-4 w-4 shrink-0 text-green-400" />
+                        <span className="text-sm font-medium text-green-400">Repos</span>
                       </div>
                     )}
                   </div>
                   {shifts.length > 0 && (
                     <span
-                      className="shrink-0 rounded px-2 py-1 text-sm font-semibold bg-[#E3F0FF] text-[#1A3A8A]"
+                      className="shrink-0 rounded px-2 py-1 text-sm font-semibold bg-blue-500/10 text-blue-300"
                       title={`Valeur exacte: ${dayTotalHours} h`}
                     >
                       {formatHoursDisplay(dayTotalHours)} h
@@ -281,13 +281,13 @@ export function AgentPlanning() {
       {selectedDay && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base capitalize text-[#222222]">
+            <CardTitle className="text-base capitalize text-foreground">
               {format(selectedDay, "EEEE d MMMM yyyy", { locale: fr })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {selectedDayShifts.length === 0 ? (
-              <p className="text-sm text-[#555555]">Aucune mission ce jour.</p>
+              <p className="text-sm text-muted-foreground">Aucune mission ce jour.</p>
             ) : (
               <div className="flex flex-col gap-4">
                 {selectedDayShifts.map((shift) => {
@@ -296,21 +296,21 @@ export function AgentPlanning() {
                   return (
                     <div
                       key={shift.id}
-                      className="flex flex-col gap-3 rounded-lg border border-border bg-[#F2F7FF]/50 p-4"
+                      className="flex flex-col gap-3 rounded-lg border border-border bg-primary/5/50 p-4"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <Clock className="h-4 w-4 text-[#555555]" />
-                        <span className="text-sm font-bold text-[#222222]">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-bold text-foreground">
                           {formatTimeNoSeconds(shift.startTime)} – {formatTimeNoSeconds(shift.endTime)}
                         </span>
                         <span
-                          className="rounded px-2 py-0.5 text-xs font-medium bg-[#E3F0FF] text-[#1A3A8A]"
+                          className="rounded px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-300"
                           title={`Valeur exacte: ${duration} h`}
                         >
                           {formatHoursDisplay(duration)} h
                         </span>
                         {shift.isNight && (
-                          <Badge className="border border-[#B8D4F0] bg-[#E3F0FF] text-[#1A3A8A] hover:bg-[#E3F0FF]">
+                          <Badge className="border border-blue-700 bg-blue-500/10 text-blue-300 hover:bg-blue-500/10">
                             Nuit
                           </Badge>
                         )}
@@ -323,8 +323,8 @@ export function AgentPlanning() {
                       {site && (
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-[#555555]" />
-                            <span className="text-sm font-medium text-[#222222]">{site.name}</span>
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium text-foreground">{site.name}</span>
                           </div>
                           <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`}
@@ -338,7 +338,7 @@ export function AgentPlanning() {
                         </div>
                       )}
                       {shift.notes && (
-                        <p className="text-sm text-[#555555]">
+                        <p className="text-sm text-muted-foreground">
                           Consignes : {shift.notes}
                         </p>
                       )}

@@ -26,9 +26,9 @@ function WelcomeAlert() {
   if (!showWelcome) return null
 
   return (
-    <Alert variant="default" className="w-full border-green-200 bg-green-50">
-      <CheckCircle2 className="h-4 w-4 text-green-600" />
-      <AlertDescription className="text-green-800">
+    <Alert variant="default" className="w-full border-green-800 bg-green-500/10">
+      <CheckCircle2 className="h-4 w-4 text-green-400" />
+      <AlertDescription className="text-green-300">
         Votre compte a été créé avec succès ! Connectez-vous avec vos identifiants pour commencer.
       </AlertDescription>
     </Alert>
@@ -64,7 +64,7 @@ function LoginForm() {
 
   return (
     <div className="login-page-wrap flex min-h-screen flex-col items-center justify-center px-4">
-      <Link href="/" className="absolute left-4 top-4 flex items-center gap-2 text-sm text-[var(--ink-soft)] hover:text-[var(--accent)]">
+      <Link href="/" className="absolute left-4 top-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
         <ArrowLeft className="h-4 w-4" />
         Retour à l&apos;accueil
       </Link>
@@ -125,7 +125,7 @@ function LoginForm() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full bg-[var(--ink)] hover:bg-[var(--accent)]" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -137,9 +137,9 @@ function LoginForm() {
               </Button>
             </form>
 
-            <div className="mt-4 text-center text-sm text-[var(--ink-soft)]">
+            <div className="mt-4 text-center text-sm text-muted-foreground">
               Vous n&apos;avez pas encore de compte ?{' '}
-              <Link href="/signup" className="text-accent font-medium hover:underline" style={{ color: 'var(--accent)' }}>
+              <Link href="/signup" className="font-medium text-primary hover:underline">
                 Créer un compte
               </Link>
             </div>
