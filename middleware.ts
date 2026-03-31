@@ -1,15 +1,32 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+  let res = NextResponse.next({ request: req })
 
-  // Refresh the session -- this validates the token and refreshes cookies
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
+          res = NextResponse.next({ request: req })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const publicRoutes = ['/', '/login', '/signup']
   const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname) ||
@@ -19,13 +36,13 @@ export async function middleware(req: NextRequest) {
     return res
   }
 
-  if (!session && !isPublicRoute) {
+  if (!user && !isPublicRoute) {
     const redirectUrl = new URL('/login', req.url)
     redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (session) {
+  if (user) {
     if (req.nextUrl.pathname.startsWith('/settings/billing')) {
       return res
     }
@@ -34,7 +51,7 @@ export async function middleware(req: NextRequest) {
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('organization_id')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single()
 
       if (profile) {

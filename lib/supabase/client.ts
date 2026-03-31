@@ -1,14 +1,13 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from './database.types'
 
-let clientInstance: ReturnType<typeof createClientComponentClient<Database>> | null = null
-
 export function createClient() {
-  if (clientInstance) return clientInstance
-  clientInstance = createClientComponentClient<Database>()
-  return clientInstance
+  return createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 }
 
 export function resetClient() {
-  clientInstance = null
+  // no-op, kept for backward compat with logout
 }
