@@ -38,9 +38,9 @@ export function AgentPlanning() {
   const [sites, setSites] = useState<Site[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Load shifts and sites in parallel
   useEffect(() => {
     if (!user) return
+    let cancelled = false
 
     const userId = user.id
     const userOrgId = user.organization_id
@@ -55,6 +55,7 @@ export function AgentPlanning() {
       supabase.from('sites').select('*').eq('organization_id', userOrgId),
     ])
       .then(([shiftsRes, sitesRes]) => {
+        if (cancelled) return
         if (shiftsRes.data) {
           setMyShifts((shiftsRes.data as any[]).map((shift: any) => ({
             id: shift.id,
@@ -81,8 +82,10 @@ export function AgentPlanning() {
           })))
         }
       })
-      .catch((error) => console.error('Error loading planning:', error))
-      .finally(() => setIsLoading(false))
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+
+    return () => { cancelled = true }
   }, [user, currentDate, viewMode, supabase])
 
   const dateRange = useMemo(() => {

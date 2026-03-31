@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 
@@ -62,8 +63,7 @@ export async function POST(req: Request) {
       )
     }
 
-    // Generate a default password (will be reset by user)
-    const defaultPassword = 'DAOU2024!' // Default password for all new users
+    const defaultPassword = randomBytes(12).toString('base64url')
 
     // Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -77,7 +77,6 @@ export async function POST(req: Request) {
     })
 
     if (authError) {
-      console.error('Error creating auth user:', authError)
       return NextResponse.json(
         { error: authError.message },
         { status: 400 }
@@ -105,7 +104,6 @@ export async function POST(req: Request) {
       .insert(profileData as any)
 
     if (insertError) {
-      console.error('Error creating user profile:', insertError)
       // Clean up: delete the auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json(
@@ -114,33 +112,21 @@ export async function POST(req: Request) {
       )
     }
 
-    // Send password reset email so user can set their own password
-    try {
-      const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'recovery',
-        email: email,
-      })
-
-      if (resetError) {
-        console.error('Error generating reset link:', resetError)
-        // Don't fail the entire operation if email fails
-      } else {
-        console.log('Password reset email sent to:', email)
-      }
-    } catch (emailError) {
-      console.error('Error sending password reset email:', emailError)
-      // Don't fail the entire operation if email fails
-    }
+    // Generate a password recovery link so the user can set their own password
+    await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,
       userId: authData.user.id,
-      defaultPassword: defaultPassword, // Return default password so admin can communicate it
+      defaultPassword,
     })
-  } catch (error: any) {
-    console.error('Create user error:', error)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: message },
       { status: 500 }
     )
   }

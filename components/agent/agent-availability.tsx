@@ -36,14 +36,12 @@ export function AgentAvailability() {
     return eachDayOfInterval({ start, end })
   }, [currentMonth])
 
-  // Load availabilities from Supabase
   useEffect(() => {
     if (!user) return
+    let cancelled = false
+    const userId = user.id
 
     async function loadAvailabilities() {
-      if (!user) return
-      const userId = user.id
-      
       setIsLoading(true)
       try {
         const start = startOfMonth(currentMonth)
@@ -56,6 +54,7 @@ export function AgentAvailability() {
           .gte('date', format(start, 'yyyy-MM-dd'))
           .lte('date', format(end, 'yyyy-MM-dd'))
 
+        if (cancelled) return
         if (!error && data) {
           setLocalAvailabilities((data as any[]).map(avail => ({
             id: avail.id,
@@ -65,15 +64,15 @@ export function AgentAvailability() {
             available: avail.available,
           })))
         }
-
-      } catch (error) {
-        console.error('Error loading availabilities:', error)
+      } catch {
+        // silently ignore on unmount
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
 
     loadAvailabilities()
+    return () => { cancelled = true }
   }, [user, currentMonth, supabase])
 
   const myAvailabilities = useMemo(() => {

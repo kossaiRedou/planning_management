@@ -74,9 +74,9 @@ export function AdminPlanning() {
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
 
-  // Load data from Supabase (parallel queries)
   useEffect(() => {
     if (!organization) return
+    let cancelled = false
 
     const orgId = organization.id
     const weekStartStr = format(weekStart, 'yyyy-MM-dd')
@@ -90,6 +90,7 @@ export function AdminPlanning() {
       supabase.from('availabilities').select('*').eq('organization_id', orgId).gte('date', weekStartStr).lte('date', weekEndStr),
     ])
       .then(([agentsRes, sitesRes, shiftsRes, availRes]) => {
+        if (cancelled) return
         if (agentsRes.data) {
           setAgents((agentsRes.data as any[]).map((profile: any) => ({
             id: profile.id,
@@ -129,8 +130,10 @@ export function AdminPlanning() {
         }
         if (availRes.data) setAvailabilities(availRes.data as any[])
       })
-      .catch((error) => console.error('Error loading planning data:', error))
-      .finally(() => setIsLoading(false))
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+
+    return () => { cancelled = true }
   }, [organization, currentDate])
 
   const getShiftsForCell = useCallback(

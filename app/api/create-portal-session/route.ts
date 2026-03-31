@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe/server'
-import { cookies } from 'next/headers'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -10,20 +9,12 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
-    // Get session from cookies
-    const cookieStore = await cookies()
-    const supabaseClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    )
-
-    // Get user from auth header or session
     const authHeader = req.headers.get('authorization')
     let userId: string | null = null
 
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '')
-      const { data: { user } } = await supabaseClient.auth.getUser(token)
+      const { data: { user } } = await supabase.auth.getUser(token)
       userId = user?.id || null
     }
 
@@ -68,10 +59,10 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (error: any) {
-    console.error('Portal session error:', error)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: message },
       { status: 500 }
     )
   }

@@ -69,34 +69,28 @@ export function AdminProfiles() {
     contactPhone: "",
   })
 
-  // Load data from Supabase
   useEffect(() => {
     if (!organization) return
+    let cancelled = false
+    const orgId = organization.id
 
     async function loadData() {
-      if (!organization) return
-      const orgId = organization.id
-      
       setIsLoading(true)
       try {
-        // Get current session token
         const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          console.error('No session found')
-          setIsLoading(false)
+        if (!session || cancelled) {
+          if (!cancelled) setIsLoading(false)
           return
         }
 
-        // Load agents from API route (server-side to access emails)
         const response = await fetch('/api/get-users', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
         })
+
+        if (cancelled) return
 
         if (response.ok) {
           const { profiles } = await response.json()
-          
           const agentsWithEmails = profiles
             .filter((p: any) => p.role === 'agent')
             .map((profile: any) => ({
@@ -109,19 +103,15 @@ export function AdminProfiles() {
               phone: profile.phone || undefined,
               certifications: profile.certifications || undefined,
             }))
-          
-          setAgents(agentsWithEmails)
-        } else {
-          console.error('Failed to load agents')
+          if (!cancelled) setAgents(agentsWithEmails)
         }
 
-        // Load sites
         const { data: sitesData, error: sitesError } = await supabase
           .from('sites')
           .select('*')
           .eq('organization_id', orgId)
 
-        if (!sitesError && sitesData) {
+        if (!cancelled && !sitesError && sitesData) {
           setSites((sitesData as any[]).map(site => ({
             id: site.id,
             organization_id: site.organization_id,
@@ -131,15 +121,15 @@ export function AdminProfiles() {
             contactPhone: site.contact_phone || undefined,
           })))
         }
-
-      } catch (error) {
-        console.error('Error loading profiles:', error)
+      } catch {
+        // silently ignore on unmount
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
 
     loadData()
+    return () => { cancelled = true }
   }, [organization, supabase])
 
   const filteredAgents = agents.filter((a) => {

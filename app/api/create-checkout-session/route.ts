@@ -64,10 +64,10 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ sessionId: session.id })
-  } catch (error: any) {
-    console.error('Checkout session error:', error)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: message },
       { status: 500 }
     )
   }

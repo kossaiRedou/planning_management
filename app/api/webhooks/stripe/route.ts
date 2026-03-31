@@ -30,10 +30,11 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET || ''
     )
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    console.error('Webhook signature verification failed:', message)
     return NextResponse.json(
-      { error: `Webhook Error: ${err.message}` },
+      { error: `Webhook Error: ${message}` },
       { status: 400 }
     )
   }
@@ -42,7 +43,6 @@ export async function POST(req: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object
-        console.log('Checkout session completed:', session.id)
 
         // Extract metadata
         const adminEmail = session.customer_details?.email || session.metadata?.admin_email
@@ -92,9 +92,7 @@ export async function POST(req: Request) {
           }
 
           userId = authData.user.id
-          console.log('Auth user created:', userId)
         } else {
-          console.log('Auth user already exists:', userId)
         }
 
         // Check if organization with this email already exists
@@ -111,7 +109,6 @@ export async function POST(req: Request) {
           const existingOrg = existingOrgData as { id: string }
           
           // Organization already exists, update it instead
-          console.log('Organization already exists, updating:', existingOrg.id)
           
           const updateData = {
             stripe_customer_id: customerId,
@@ -160,8 +157,6 @@ export async function POST(req: Request) {
           organization = newOrg
         }
 
-        console.log('Organization created/updated:', organization.id)
-
         // Create user profile
         const userProfileData = {
           id: userId,
@@ -180,13 +175,11 @@ export async function POST(req: Request) {
           throw profileError
         }
 
-        console.log('User profile created for:', userId)
         break
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object
-        console.log('Subscription updated:', subscription.id)
 
         // Update organization subscription status
         const { error } = await (supabaseAdmin
@@ -205,7 +198,6 @@ export async function POST(req: Request) {
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object
-        console.log('Subscription deleted:', subscription.id)
 
         // Mark organization as canceled
         const { error } = await (supabaseAdmin
@@ -224,7 +216,6 @@ export async function POST(req: Request) {
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object
-        console.log('Payment succeeded for invoice:', invoice.id)
 
         if (invoice.subscription) {
           // Update subscription status to active
@@ -245,7 +236,6 @@ export async function POST(req: Request) {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object
-        console.log('Payment failed for invoice:', invoice.id)
 
         if (invoice.subscription) {
           // Update subscription status to past_due
@@ -265,14 +255,15 @@ export async function POST(req: Request) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        break
     }
 
     return NextResponse.json({ received: true })
-  } catch (error: any) {
-    console.error('Webhook handler error:', error)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    console.error('Webhook handler error:', message)
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: message },
       { status: 500 }
     )
   }

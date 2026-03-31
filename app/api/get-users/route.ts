@@ -81,10 +81,10 @@ export async function GET(req: Request) {
     return NextResponse.json({
       profiles: profilesWithEmails,
     })
-  } catch (error: any) {
-    console.error('Get users error:', error)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: message },
       { status: 500 }
     )
   }

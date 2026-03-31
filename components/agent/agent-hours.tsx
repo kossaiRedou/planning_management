@@ -37,9 +37,9 @@ export function AgentHours() {
   const rangeStartStr = format(rangeStart, "yyyy-MM-dd")
   const rangeEndStr = format(rangeEnd, "yyyy-MM-dd")
 
-  // Load shifts and sites in parallel (deps stables pour éviter la boucle de re-renders)
   useEffect(() => {
     if (!user) return
+    let cancelled = false
 
     const userId = user.id
     const userOrgId = user.organization_id
@@ -50,6 +50,7 @@ export function AgentHours() {
       supabase.from('sites').select('*').eq('organization_id', userOrgId),
     ])
       .then(([shiftsRes, sitesRes]) => {
+        if (cancelled) return
         if (shiftsRes.data) {
           setMyShifts((shiftsRes.data as any[]).map((shift: any) => ({
             id: shift.id,
@@ -76,8 +77,10 @@ export function AgentHours() {
           })))
         }
       })
-      .catch((error) => console.error('Error loading hours:', error))
-      .finally(() => setIsLoading(false))
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setIsLoading(false) })
+
+    return () => { cancelled = true }
   }, [user, rangeStartStr, rangeEndStr, supabase])
 
   const stats = useMemo(() => {

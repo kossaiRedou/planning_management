@@ -57,49 +57,55 @@ export function AdminBoard() {
   const rangeStartStr = format(rangeStart, "yyyy-MM-dd")
   const rangeEndStr = format(rangeEnd, "yyyy-MM-dd")
 
-  // Load agents and sites once
   useEffect(() => {
     if (!organization) return
+    let cancelled = false
     const orgId = organization.id
 
     async function loadRefs() {
-      const [agentsRes, sitesRes] = await Promise.all([
-        supabase.from("user_profiles").select("*").eq("organization_id", orgId).eq("role", "agent"),
-        supabase.from("sites").select("*").eq("organization_id", orgId),
-      ])
-      if (agentsRes.data) {
-        setAgents(
-          (agentsRes.data as any[]).map((p) => ({
-            id: p.id,
-            organization_id: p.organization_id,
-            email: "",
-            firstName: p.first_name,
-            lastName: p.last_name,
-            role: "agent" as const,
-            phone: p.phone ?? undefined,
-            certifications: p.certifications ?? undefined,
-          }))
-        )
-      }
-      if (sitesRes.data) {
-        setSites(
-          (sitesRes.data as any[]).map((s) => ({
-            id: s.id,
-            organization_id: s.organization_id,
-            name: s.name,
-            address: s.address,
-            contactName: s.contact_name ?? undefined,
-            contactPhone: s.contact_phone ?? undefined,
-          }))
-        )
+      try {
+        const [agentsRes, sitesRes] = await Promise.all([
+          supabase.from("user_profiles").select("*").eq("organization_id", orgId).eq("role", "agent"),
+          supabase.from("sites").select("*").eq("organization_id", orgId),
+        ])
+        if (cancelled) return
+        if (agentsRes.data) {
+          setAgents(
+            (agentsRes.data as any[]).map((p) => ({
+              id: p.id,
+              organization_id: p.organization_id,
+              email: "",
+              firstName: p.first_name,
+              lastName: p.last_name,
+              role: "agent" as const,
+              phone: p.phone ?? undefined,
+              certifications: p.certifications ?? undefined,
+            }))
+          )
+        }
+        if (sitesRes.data) {
+          setSites(
+            (sitesRes.data as any[]).map((s) => ({
+              id: s.id,
+              organization_id: s.organization_id,
+              name: s.name,
+              address: s.address,
+              contactName: s.contact_name ?? undefined,
+              contactPhone: s.contact_phone ?? undefined,
+            }))
+          )
+        }
+      } catch {
+        // silently ignore if component unmounted
       }
     }
     loadRefs()
+    return () => { cancelled = true }
   }, [organization, supabase])
 
-  // Load shifts (deps stables)
   useEffect(() => {
     if (!organization) return
+    let cancelled = false
     const orgId = organization.id
 
     async function loadShifts() {
@@ -117,6 +123,7 @@ export function AdminBoard() {
         if (siteId) q = q.eq("site_id", siteId)
 
         const { data } = await q
+        if (cancelled) return
         if (data) {
           setShifts(
             (data as any[]).map((s) => ({
@@ -136,14 +143,14 @@ export function AdminBoard() {
         } else {
           setShifts([])
         }
-      } catch (e) {
-        console.error(e)
-        setShifts([])
+      } catch {
+        if (!cancelled) setShifts([])
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
     loadShifts()
+    return () => { cancelled = true }
   }, [organization, rangeStartStr, rangeEndStr, agentId, siteId, supabase])
 
   const stats = useMemo(() => {
