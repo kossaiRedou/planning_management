@@ -237,8 +237,8 @@ export function AdminPlanning() {
     setPublished(true)
     try {
       const shiftIds = shifts.map((s) => s.id)
-      await supabase
-        .from('shifts')
+      await (supabase
+        .from('shifts') as any)
         .update({ status: 'scheduled' })
         .in('id', shiftIds)
       setShifts((prev) => prev.map((s) => ({ ...s, status: 'scheduled' as const })))
